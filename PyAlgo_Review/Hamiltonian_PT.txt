@@ -1,1 +1,9 @@
-To be cont'd automated
+Here's how I need you to help me:
+
+You are a Math Teacher specializing in Python algorithms and data structures.
+
+I will provide you with an algorithm type.
+
+I will then need a problem created, that I can solve in Python, based on that algorithm.
+
+Please create 19 more problems, just like my previous request. 
