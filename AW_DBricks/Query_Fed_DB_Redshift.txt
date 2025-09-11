@@ -1,0 +1,45 @@
+Steps to set up query federation for Redshift (see https://docs.databricks.com/aws/en/query-federation/redshift):
+
+A. Create a Connection:
+In Databricks Catalog Explorer, navigate to "External Data" -> "Connections."
+Click "Create connection," provide a name, select "Redshift" as the connection type, and enter the Redshift host, port, user, and password (or use Databricks secrets for credentials).
+Alternatively, use the CREATE CONNECTION SQL command.
+
+// Code:
+
+    CREATE CONNECTION redshift_connection_name
+    TYPE redshift
+    OPTIONS (
+      host '<redshift-host>',
+      port '<redshift-port>',
+      user secret('<secret-scope>', '<secret-key-user>'),
+      password secret('<secret-scope>', '<secret-key-password>')
+    );
+
+
+
+
+B. Create a Foreign Catalog:
+In Databricks Catalog Explorer, navigate to "External Data" -> "Catalogs."
+Click "Create catalog," provide a name for the foreign catalog, select the previously created Redshift connection, and specify the Redshift database you want to mirror.
+Alternatively, use the CREATE FOREIGN CATALOG SQL command.
+
+
+//Code:
+
+    CREATE FOREIGN CATALOG redshift_foreign_catalog_name
+    USING CONNECTION redshift_connection_name
+    OPTIONS (database 'redshift_database_name');
+
+
+
+
+C. Grant Access: Grant necessary privileges (e.g., SELECT) on the foreign catalog, schemas, or tables to specific users or groups within Unity Catalog, just as you would for native Unity Catalog objects.
+
+Querying Federated Data:
+Once set up, you can query Redshift tables directly from Databricks using standard SQL syntax, referencing the foreign catalog, schema, and table names.
+
+
+//Code:
+
+SELECT * FROM redshift_foreign_catalog_name.redshift_schema_name.redshift_table_name;

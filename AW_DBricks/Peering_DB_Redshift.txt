@@ -1,0 +1,7 @@
+DataBricks and Redshift Peering Parameters
+
+VPC1 - Databricks VPC
+VPC2 - Redshift VPC
+Route Table - Databricks VPC
+Peering Connection - Databricks <--> Redshift
+Security Group - Databricks Unmanaged
