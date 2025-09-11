@@ -1,0 +1,53 @@
+
+MLflow is an open-source platform designed to manage the machine learning lifecycle, from experimentation and reproducibility to deployment. It is organized into several distinct components, each with its own set of functions and definitions. 
+
+MLflow Tracking
+MLflow Tracking is an API and UI for logging and querying the details of machine learning experiments. A single execution of a piece of ML code is called a run, and a group of related runs is an experiment. 
+
+Core functions:
+- mlflow.start_run(): Starts a new MLflow run, which provides a context for logging all associated data.
+- mlflow.log_param(key, value): Logs a single key-value parameter, such as a hyperparameter or configuration setting.
+- mlflow.log_metric(key, value): Logs a single numeric metric, such as accuracy or loss. Metrics can be logged over time, with MLflow recording and visualizing the full history.
+- mlflow.log_artifact(local_path): Logs a local file or directory as an artifact of the run, such as a trained model, plot, or image.
+- mlflow.set_experiment(name): Sets the currently active experiment. If the experiment does not exist, it is created.
+- mlflow.autolog(): Automatically logs parameters, metrics, and models for popular ML libraries without manual log statements. 
+
+MLflow Models:
+MLflow Models provide a standard format for packaging machine learning models from any library, enabling them to be used in various downstream tools for serving or inference. 
+Key functions
+
+- mlflow.sklearn.log_model(): Logs a Scikit-learn model with all of its components and dependencies.
+- mlflow.pyfunc.log_model(): Logs a generic Python model, making it usable by any tool that supports the "Python function" flavor.
+- mlflow.pytorch.save_model(): Saves a PyTorch model in the MLflow format to a specified path.
+- mlflow.keras.load_model(): Loads a Keras model saved in the MLflow format from a directory or run artifact.
+- mlflow.models.build_docker(): Builds a Docker image for serving a model. 
+
+Important definitions:
+- Flavor: A convention that deployment tools use to understand how to interpret and execute a model. A single MLflow model can have multiple flavors.
+- Model Signature: Describes the schema for a model's inputs and outputs, which is used for validation during serving.
+- LoggedModel (MLflow 3): A distinct object created when a model is logged. It persists throughout the model's lifecycle and contains links to its artifacts, metrics, and parameters. 
+
+MLflow Model Registry:
+The Model Registry is a centralized component for managing the entire lifecycle of an MLflow Model. It provides versioning, stage transitions, and annotations. 
+
+Key functions:
+- mlflow.register_model(): Registers a model with the Model Registry, creating a new model version.
+- mlflow.models.transition_model_version_stage(): Moves a registered model version to a new stage, such as Staging, Production, or Archived. 
+
+MLflow Projects:
+MLflow Projects provide a standard, reproducible format for packaging data science code. A project is a directory of files or a Git repository with an optional MLproject file that defines its entry points and dependencies. 
+
+Key functions:
+- mlflow.run(): Executes an MLflow Project from a local path or Git URI.
+- mlflow.projects.run(): Programmatically runs a project, which is useful for building multi-step workflows. 
+
+MLflow Recipes:
+MLflow Recipes are a framework for building highly-structured, production-ready ML pipelines using predefined templates for common tasks like regression and classification. 
+
+Key functions:
+- mlflow.recipes.run(): Executes an MLflow Recipe based on a recipe.yaml configuration and a selected profile.
+- mlflow.recipes.inspect(): Visualizes the overall recipe's step dependency graph and the artifacts each step produces. 
+
+Important definitions:
+- Recipe: An ordered composition of steps (e.g., ingest, train, evaluate) for a specific ML problem.
+- Profile: Used to quickly switch between environment-specific settings (e.g., a local profile for development vs. a databricks profile for production). 
