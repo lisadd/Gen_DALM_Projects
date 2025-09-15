@@ -1,0 +1,27 @@
+Model Serving Endpoints on Databricks w/AWS 
+- Reference: https://docs.databricks.com/aws/en/machine-learning/model-serving/create-manage-serving-endpoints
+- Reference: https://docs.databricks.com/aws/en/mlflow3/genai/tracing/integrations/bedrock
+
+TEST CASE - https://aws.amazon.com/blogs/apn/zero-to-generative-ai-with-databricks-and-aws/
+
+
+
+
+//Key Steps for Integration:
+
+Configure AWS Credentials:
+- Ensure your Databricks workspace has the necessary AWS credentials to access Amazon Bedrock.
+
+
+Enable MLflow Autologging for Bedrock:
+- Use mlflow.bedrock.autolog() to automatically capture details of Bedrock API calls.
+
+
+Set MLflow Tracking URI:
+- Configure MLflow to log runs to your Databricks workspace using mlflow.set_tracking_uri("databricks").
+
+
+Develop and Deploy:
+- Build your Generative AI application within Databricks, utilizing Bedrock models, and deploy it using Databricks serving endpoints or other deployment mechanisms.
+
+
