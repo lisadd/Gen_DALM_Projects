@@ -1,11 +1,14 @@
-The goal of this repo is to provide reusable code via CLI and SDK for AZ.
+This repo will provide reusable code based on cli and SDK.
+
 
 - Train Model
 - Data and Compute
-- Orchestrate Pipeline and Deploy Real-Time Learning Services
-- Deploy Batch Inference Pipelines
-- Tune Hyperameters
-- Model Selection
-- Protect Data
-- Monitor ML Deployments
+- Orchestrate Pipeline
+- Deploy Real-Time ML Services
+- Deploy Batch-Infernce Pipelines
+- Hyperparameter Tuning
+- Select Models
+- Protect Sensitive Data
+- ML Deployments
+
 
