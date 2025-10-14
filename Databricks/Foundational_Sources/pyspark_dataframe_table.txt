@@ -1,0 +1,25 @@
+#Create a PySpark DataFrame and then save it as a table using the write API. This allows you to create a table directly from your data.
+
+from pyspark.sql import SparkSession
+from pyspark.sql.types import StructType, StructField, StringType, IntegerType
+
+spark = SparkSession.builder.appName("CreateTableFromDataFrame").getOrCreate()
+
+# Create a DataFrame
+schema = StructType([
+    StructField("order_id", IntegerType(), True),
+    StructField("order_name", StringType(), True),
+    StructField("order_state", StringType(), True)
+])
+
+data = [(1, "Fonzie", "Completed"), (2, "Taylor", "Completed"), (3, "Mary", "Completed")]
+df = spark.createDataFrame(data, schema=schema)
+
+# Save the DataFrame as a managed table
+df.write.mode("overwrite").saveAsTable("order_table")
+
+# Save the DataFrame as an external table (specifying a path)
+df.write.mode("overwrite").format("parquet").option("path", "/user/spark/external_data/orders_parquet").saveAsTable("orders_external_table")
+
+spark.stop()
+

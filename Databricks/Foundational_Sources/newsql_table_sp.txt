@@ -1,0 +1,9 @@
+CREATE TABLE sales_data (
+    order_id INT NOT NULL,
+    product_name STRING,
+    quantity INT,
+    sale_date DATE
+)
+USING DELTA
+#This path should typically point to a cloud storage location (e.g., dbfs:/, s3://, abfss://)
+LOCATION 'dbfs:/mnt/my_delta_lake/sales_data';
