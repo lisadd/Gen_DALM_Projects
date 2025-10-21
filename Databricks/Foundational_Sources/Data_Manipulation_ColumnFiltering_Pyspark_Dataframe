@@ -1,0 +1,68 @@
+/* 
+In PySpark, column filtering, also known as row filtering, involves selecting a subset of rows from a DataFrame based on specified conditions applied to one or more columns. This is a fundamental data manipulation technique used to refine datasets for analysis.
+
+Here are the primary methods for filtering columns in PySpark:
+
+Using filter() or where() with Column Expressions:
+The filter() and where() methods are aliases and accept a boolean expression as an argument. This expression typically involves a column from the DataFrame and a comparison operator. */
+
+    from pyspark.sql import SparkSession
+    from pyspark.sql.functions import col
+
+    spark = SparkSession.builder.appName("ColumnFiltering").getOrCreate()
+
+    data = [("Alice", 25, "New York"),
+            ("Bob", 30, "London"),
+            ("Charlie", 35, "New York"),
+            ("David", 28, "Paris")]
+
+    columns = ["Name", "Age", "City"]
+    df = spark.createDataFrame(data, columns)
+
+    # Filter rows where 'Age' is greater than 28
+    filtered_df_age = df.filter(col("Age") > 28)
+    filtered_df_age.show()
+
+    # Filter rows where 'City' is "New York"
+    filtered_df_city = df.where(col("City") == "New York")
+    filtered_df_city.show()
+
+
+
+/* Using filter() with SQL-like Strings.
+For simpler, quick filtering, you can provide a SQL-like string directly to the filter() method. */ 
+
+
+    # Filter using a SQL-like string
+    filtered_df_sql = df.filter("Age <= 30 AND City = 'London'")
+    filtered_df_sql.show()
+
+
+
+/* Combining Multiple Conditions.
+You can combine multiple filter conditions using logical operators: & (AND), | (OR), and ~ (NOT). Parentheses are crucial for maintaining the correct order of operations. */
+
+    # Combine conditions: Age > 25 AND City != "Paris"
+    combined_filter_df = df.filter((col("Age") > 25) & (col("City") != "Paris"))
+    combined_filter_df.show()
+
+
+/* Filtering with isin().
+To filter for multiple specific values within a column, the isin() method provides a concise way to achieve this. */
+
+    # Filter rows where 'City' is either "New York" or "Paris"
+    isin_filter_df = df.filter(col("City").isin("New York", "Paris"))
+    isin_filter_df.show()
+
+
+
+/* Filtering with between().
+For filtering numerical columns within a specified range (inclusive), the between() method is useful. */
+
+    # Filter rows where 'Age' is between 28 and 35 (inclusive)
+    between_filter_df = df.filter(col("Age").between(28, 35))
+    between_filter_df.show()
+
+
+
+
