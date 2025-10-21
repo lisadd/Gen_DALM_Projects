@@ -1,0 +1,29 @@
+#Pyspark SQL Table  -  method involves executing a CREATE TABLE statement directly within PySpark. You can define the table schema, data source, and other properties.
+
+from pyspark.sql import SparkSession
+
+spark = SparkSession.builder.appName("CreateTable").getOrCreate()
+
+# Create a managed table
+spark.sql("""
+    CREATE TABLE IF NOT EXISTS my_managed_table (
+        id INT,
+        name STRING,
+        age INT
+    ) USING PARQUET
+""")
+
+# Create an external table (specifying a location)
+spark.sql("""
+    CREATE TABLE IF NOT EXISTS my_external_table (
+        id INT,
+        product STRING,
+        price DOUBLE
+    ) USING CSV
+    OPTIONS (header 'true', inferSchema 'true')
+    LOCATION '/user/spark/external_data/products'
+""")
+
+spark.stop()
+
+
