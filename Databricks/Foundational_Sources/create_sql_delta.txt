@@ -1,0 +1,12 @@
+#See Syntax to Create SQL Table Using Delta (Databricks)
+
+CREATE TABLE table_name (
+  column1_name data_type [NOT NULL] [COMMENT 'column comment'],
+  column2_name data_type [NOT NULL] [COMMENT 'column comment'],
+  ...
+  columnN_name data_type [NOT NULL] [COMMENT 'column comment']
+)
+USING DELTA
+[LOCATION 'path/to/delta/table']
+[TBLPROPERTIES ('key' = 'value', ...)];
+

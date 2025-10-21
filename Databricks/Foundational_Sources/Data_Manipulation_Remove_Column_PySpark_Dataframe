@@ -1,0 +1,19 @@
+###Removing Columns in PySpark - To remove one or more columns from a PySpark DataFrame, the drop() transformation is employed.
+
+from pyspark.sql import SparkSession
+
+spark = SparkSession.builder.appName("DataManipulation").getOrCreate()
+
+data = [("Alice", 1, "NY"), ("Bob", 2, "CA"), ("Charlie", 3, "TX")]
+df = spark.createDataFrame(data, ["Name", "ID", "City"])
+
+# Drop a single column
+df_dropped_single = df.drop("City")
+
+# Drop multiple columns
+df_dropped_multiple = df.drop("ID", "City")
+
+df_dropped_single.show()
+df_dropped_multiple.show()
+spark.stop()
+

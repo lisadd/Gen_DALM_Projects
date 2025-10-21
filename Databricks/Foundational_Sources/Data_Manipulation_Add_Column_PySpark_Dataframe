@@ -1,0 +1,23 @@
+###Adding Columns in PySpark - To add a new column or modify an existing one in a PySpark DataFrame, the withColumn() transformation is used.
+
+
+from pyspark.sql import SparkSession
+from pyspark.sql.functions import col, lit
+
+spark = SparkSession.builder.appName("DataManipulation").getOrCreate()
+
+data = [("Alice", 1), ("Bob", 2), ("Charlie", 3)]
+df = spark.createDataFrame(data, ["Name", "ID"])
+
+# Add a new column with a static value
+df_with_static_col = df.withColumn("Status", lit("Active"))
+
+# Add a new column based on an existing column
+df_with_derived_col = df_with_static_col.withColumn("ID_doubled", col("ID") * 2)
+
+# Overwrite an existing column (e.g., change "ID" to a string type)
+df_modified_col = df_with_derived_col.withColumn("ID", col("ID").cast("string"))
+
+df_modified_col.show()
+spark.stop()
+
