@@ -1,0 +1,66 @@
+/* 1. Filtering Rows:
+To select a subset of rows based on conditions, use the filter() or where() methods. These methods take a column expression or a SQL-like condition as an argument. */
+
+from pyspark.sql import SparkSession
+from pyspark.sql.functions import col
+
+spark = SparkSession.builder.appName("SubsetDataFrame").getOrCreate()
+
+# Sample DataFrame
+data = [("Alice", 1, 30), ("Bob", 2, 25), ("Charlie", 1, 35), ("David", 3, 28)]
+columns = ["Name", "Department", "Age"]
+df = spark.createDataFrame(data, columns)
+
+# Filter rows where Department is 1
+subset_df_filtered = df.filter(col("Department") == 1)
+subset_df_filtered.show()
+
+# Filter rows where Age is greater than 28
+subset_df_filtered_age = df.where(col("Age") > 28)
+subset_df_filtered_age.show()
+
+# Combine multiple conditions
+subset_df_combined = df.filter((col("Department") == 1) & (col("Age") > 25))
+subset_df_combined.show()
+
+
+
+/* 2. Projecting Columns:
+To select a subset of columns, use the select() method. This method takes column names or expressions as arguments. */
+
+
+# Select only "Name" and "Age" columns
+subset_df_selected_cols = df.select("Name", "Age")
+subset_df_selected_cols.show()
+
+# Select columns and rename one
+subset_df_renamed_col = df.select(col("Name"), col("Age").alias("YearsOld"))
+subset_df_renamed_col.show()
+
+
+/* 3. Combining Filtering and Projection:
+You can combine these methods to achieve more specific subsets. */
+
+
+# Filter by condition and then select specific columns
+subset_df_combined = df.filter(col("Department") == 1).select("Name", "Age")
+subset_df_combined.show()
+
+
+/*4. Limiting Rows:
+To get a fixed number of rows from the top of the DataFrame, use the limit() method. This is useful for quick inspection or creating small samples.*/
+
+# Get the first 2 rows
+subset_df_limited = df.limit(2)
+subset_df_limited.show()
+
+
+/* 5. Sampling Rows:
+For creating a random sample of the data, use the sample() method. */
+
+# Get a 50% sample with replacement (True) or without replacement (False)
+subset_df_sample = df.sample(withReplacement=False, fraction=0.5, seed=42)
+subset_df_sample.show()
+
+
+

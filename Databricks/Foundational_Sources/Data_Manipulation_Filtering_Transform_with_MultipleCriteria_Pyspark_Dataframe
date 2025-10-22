@@ -1,0 +1,73 @@
+/* Data manipulation in PySpark, particularly filtering or transforming based on multiple criteria, involves using logical operators and functions within DataFrame operations.
+
+Filtering with Multiple Criteria
+
+To filter a DataFrame based on multiple conditions, use the filter() or where() methods with bitwise logical operators:
+- AND logic: Use a single ampersand (&).
+- OR logic: Use a single pipe symbol (|).
+- NOT logic: Use a tilde (~). 
+
+Each condition must be enclosed in parentheses. */
+
+
+from pyspark.sql import SparkSession
+from pyspark.sql.functions import col
+
+spark = SparkSession.builder.appName("MultiCriteriaFilter").getOrCreate()
+
+data = [
+    ("Alice", 25, "New York", 50000),
+    ("Bob", 30, "London", 60000),
+    ("Charlie", 35, "New York", 75000),
+    ("David", 28, "Paris", 55000),
+    ("Eve", 40, "London", 80000),
+]
+columns = ["Name", "Age", "City", "Salary"]
+df = spark.createDataFrame(data, columns)
+
+# Filter for individuals older than 30 AND in New York
+filtered_df = df.filter((col("Age") > 30) & (col("City") == "New York"))
+filtered_df.show()
+
+# Filter for individuals younger than 30 OR with a salary greater than 70000
+filtered_df_or = df.filter((col("Age") < 30) | (col("Salary") > 70000))
+filtered_df_or.show()
+
+spark.stop()
+
+
+
+
+
+/* Conditional Transformations with Multiple Criteria
+For conditional transformations, such as creating a new column based on multiple conditions, use when() and otherwise() from pyspark.sql.functions. */
+
+from pyspark.sql import SparkSession
+from pyspark.sql.functions import col, when
+
+spark = SparkSession.builder.appName("ConditionalTransform").getOrCreate()
+
+data = [
+    ("Alice", 25, "New York", 50000),
+    ("Bob", 30, "London", 60000),
+    ("Charlie", 35, "New York", 75000),
+    ("David", 28, "Paris", 55000),
+    ("Eve", 40, "London", 80000),
+]
+columns = ["Name", "Age", "City", "Salary"]
+df = spark.createDataFrame(data, columns)
+
+# Create a 'Category' column based on Age and City
+transformed_df = df.withColumn(
+    "Category",
+    when((col("Age") > 30) & (col("City") == "New York"), "Senior NY")
+    .when((col("Age") < 30) | (col("Salary") > 70000), "High Potential")
+    .otherwise("Other"),
+)
+transformed_df.show()
+
+spark.stop()
+
+
+
+
