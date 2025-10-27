@@ -1,0 +1,34 @@
+/* Contracting Nested Data (Nesting):
+This involves aggregating data into arrays or structs. 
+Creating Arrays: The collect_list or collect_set functions aggregate values into an array. */
+
+    from pyspark.sql import SparkSession
+    from pyspark.sql.functions import collect_list
+
+    spark = SparkSession.builder.appName("ContractNestedData").getOrCreate()
+
+    data = [("Alice", 1), ("Alice", 2), ("Bob", 3)]
+    df = spark.createDataFrame(data, ["name", "value"])
+
+    # Group by name and collect values into a list
+    contracted_df = df.groupBy("name").agg(collect_list("value").alias("values_list"))
+    contracted_df.show()
+
+
+#Creating Structs: The struct function can combine multiple columns into a single struct column.
+
+    from pyspark.sql import SparkSession
+    from pyspark.sql.functions import struct
+
+    spark = SparkSession.builder.appName("ContractToStruct").getOrCreate()
+
+    data = [("David", "Oak Ave", 67890)]
+    df = spark.createDataFrame(data, ["name", "street", "zip"])
+
+    # Create a struct column 'address' from 'street' and 'zip'
+    nested_df = df.select("name", struct("street", "zip").alias("address"))
+    nested_df.show()
+    nested_df.printSchema()
+
+
+

@@ -1,0 +1,44 @@
+/* In PySpark on Databricks, handling nested data often involves "expanding" (flattening) or "contracting" (nesting) data structures.
+Expanding Nested Data (Flattening):
+This typically involves converting elements within an array or struct into individual rows or columns. 
+Exploding Arrays: The explode function transforms each element of an array in a column into a separate row. */ 
+
+    from pyspark.sql import SparkSession
+    from pyspark.sql.functions import explode
+
+    spark = SparkSession.builder.appName("ExpandNestedData").getOrCreate()
+
+    data = [("Alice", [1, 2, 3]), ("Bob", [4, 5])]
+    df = spark.createDataFrame(data, ["name", "numbers"])
+
+    # Explode the 'numbers' array
+    exploded_df = df.select("name", explode("numbers").alias("number_element"))
+    exploded_df.show()
+
+
+
+# Accessing Struct Fields: You can directly access fields within a struct using dot notation. 
+
+    from pyspark.sql import SparkSession
+    from pyspark.sql.types import StructType, StructField, StringType, IntegerType
+
+    spark = SparkSession.builder.appName("ExpandStructData").getOrCreate()
+
+    schema = StructType([
+        StructField("name", StringType()),
+        StructField("address", StructType([
+            StructField("street", StringType()),
+            StructField("zip", IntegerType())
+        ]))
+    ])
+
+    data = [("Charlie", ("Main St", 12345))]
+    df = spark.createDataFrame(data, schema)
+
+    # Accessing nested struct fields
+    flattened_df = df.select("name", "address.street", "address.zip")
+    flattened_df.show()
+
+
+
+
