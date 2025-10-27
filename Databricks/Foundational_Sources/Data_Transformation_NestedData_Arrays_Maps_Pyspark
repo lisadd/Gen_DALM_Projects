@@ -1,0 +1,37 @@
+/* Working with Arrays and Maps:
+explode() function: Unpack values from ARRAY or MAP columns, creating a new row for each element. */
+
+    from pyspark.sql.functions import explode
+    # For ARRAY
+    df.select(explode("array_column").alias("exploded_element"))
+    # For MAP
+    df.select(explode("map_column").alias("key_column", "value_column"))
+
+
+# collect_list() or collect_set(): Aggregate values into an ARRAY.
+
+    from pyspark.sql.functions import collect_list, collect_set
+    df.groupBy("group_key").agg(collect_list("value_column").alias("list_of_values"))
+
+
+# Higher-Order Functions (transform, filter, exists, forall): Apply functions to elements within ARRAY columns.
+
+    from pyspark.sql.functions import expr
+    df.withColumn("transformed_array", expr("transform(array_column, x -> x + 1)"))
+
+
+/* JSON Transformations:
+to_json(): Convert a complex data type (like STRUCT or ARRAY) to a JSON string. */
+
+    from pyspark.sql.functions import to_json
+    df.withColumn("json_string", to_json("complex_column"))
+
+
+# from_json(): Convert a JSON string to a complex data type, requiring a schema for parsing.
+
+    from pyspark.sql.functions import from_json
+    from pyspark.sql.types import StructType, StringType, IntegerType
+    schema = StructType([StructField("name", StringType()), StructField("age", IntegerType())])
+    df.withColumn("parsed_json", from_json("json_string_column", schema))
+
+

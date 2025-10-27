@@ -1,0 +1,24 @@
+/* Transforming nested data in PySpark on Databricks involves various techniques to manipulate STRUCT types. Accessing Nested Fields:
+Dot Notation: Access fields within a STRUCT using dot notation. */
+
+    from pyspark.sql.functions import col
+    df.select(col("nested_column.field_name"))
+
+
+# Square Brackets: Select named fields from a nested column using square brackets.
+
+    from pyspark.sql.functions import col
+    df.select(col("column_name")["field_name"])
+
+
+/* Creating Nested Fields:
+struct() function: Create new STRUCT fields by combining existing columns. */
+
+    from pyspark.sql.functions import struct
+    df.select(struct("col1", "col2").alias("new_struct_column"))
+
+# Nesting all columns: Create a STRUCT containing all columns from a DataFrame.
+
+    from pyspark.sql.functions import struct
+    df.select(struct("*").alias("all_columns_struct"))
+
