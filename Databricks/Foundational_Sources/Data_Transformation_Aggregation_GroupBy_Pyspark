@@ -1,0 +1,59 @@
+/* In Databricks, data transformation involving aggregation with GROUP BY is a fundamental operation for summarizing and analyzing data. This process combines rows that share common values in specified columns and then applies aggregate functions to the grouped data.
+
+
+Key Concepts:
+GROUP BY Clause:
+- Used in SQL queries (Databricks SQL) or PySpark DataFrames to specify one or more columns by which to group the data.
+- All rows with the same values in the GROUP BY columns are treated as a single group.
+
+	- Example in SQL: GROUP BY column_name1, column_name2
+	- Example in PySpark: df.groupBy("column_name1", "column_name2")
+
+Aggregate Functions:
+  Functions applied to the groups created by the GROUP BY clause.
+  Common aggregate functions include:
+  - COUNT(): Counts the number of rows in each group.
+  - SUM(): Calculates the sum of a numeric column in each group.
+  - AVG(): Calculates the average of a numeric column in each group.
+  - MIN(): Finds the minimum value of a column in each group.
+  - MAX(): Finds the maximum value of a column in each group.
+  - MODE(): Returns the most frequent value in a group.
+
+
+Advanced Aggregations:
+  Databricks SQL supports advanced aggregation clauses for more complex grouping scenarios:
+  - GROUPING SETS: Allows you to define multiple grouping sets within a single query, effectively performing multiple GROUP BY operations and combining their results.
+  - ROLLUP: Generates grouping sets that represent hierarchical aggregations, including subtotals and a grand total.
+  - CUBE: Generates grouping sets for all possible combinations of the specified grouping expressions.  */
+
+
+# Example in Databricks SQL:
+
+SELECT
+    product_category,
+    SUM(sales_amount) AS total_sales,
+    AVG(price) AS average_price
+FROM
+    sales_data
+WHERE
+    sale_date >= '2025-01-01'
+GROUP BY
+    product_category
+HAVING
+    SUM(sales_amount) > 10000;
+
+
+
+# Example in PySpark (Databricks Notebook):
+
+from pyspark.sql.functions import sum, avg
+
+# Assuming 'df' is your DataFrame
+df_aggregated = df.groupBy("product_category") \
+                  .agg(sum("sales_amount").alias("total_sales"),
+                       avg("price").alias("average_price"))
+
+df_aggregated.show()
+ 
+
+
