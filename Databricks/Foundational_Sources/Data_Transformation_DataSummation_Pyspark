@@ -1,0 +1,92 @@
+/* Calculating data summations in Databricks using PySpark involves using Spark DataFrame operations and aggregate functions. The primary method for achieving this is through the groupBy() and agg() functions, or directly on a column using select() and sum(). */
+
+
+# 1. Summing a Column: To calculate the sum of a single column in a PySpark DataFrame:
+
+from pyspark.sql import SparkSession
+from pyspark.sql import functions as F
+
+# Initialize SparkSession (if not already in Databricks environment)
+# spark = SparkSession.builder.appName("SummationExample").getOrCreate()
+
+# Sample DataFrame
+data = [("A", 10), ("B", 20), ("A", 30), ("C", 15)]
+df = spark.createDataFrame(data, ["category", "value"])
+
+# Calculate the sum of the 'value' column
+total_sum = df.select(F.sum("value")).collect()[0][0]
+
+print(f"Total sum of 'value' column: {total_sum}")
+
+/* OR  1. Summing a Single Column: To calculate the total sum of values in a specific column, use the agg function with sum: */
+
+from pyspark.sql.functions import sum
+
+# Assuming 'df' is your DataFrame and 'column_name' is the column to sum
+total_sum = df.agg(sum("column_name")).collect()[0][0]
+
+
+
+# 2. Summing by Group (Grouped Summation): To calculate the sum of a column grouped by another column:
+
+from pyspark.sql import SparkSession
+from pyspark.sql import functions as F
+
+# Initialize SparkSession (if not already in Databricks environment)
+# spark = SparkSession.builder.appName("GroupedSummationExample").getOrCreate()
+
+# Sample DataFrame
+data = [("A", 10), ("B", 20), ("A", 30), ("C", 15), ("B", 5)]
+df = spark.createDataFrame(data, ["category", "value"])
+
+# Calculate the sum of 'value' grouped by 'category'
+grouped_sum = df.groupBy("category").agg(F.sum("value").alias("sum_value"))
+
+grouped_sum.display() # In Databricks, use display() for formatted output
+# or grouped_sum.show() for console output
+
+
+/* OR 2. Grouped Summation: To calculate summations for groups within your data (e.g., sum of sales per product category), use groupBy followed by agg and sum: /*
+
+from pyspark.sql.functions import sum
+
+# Assuming 'df' is your DataFrame, 'grouping_column' is the column to group by,
+# and 'sum_column' is the column to sum within each group
+grouped_sum = df.groupBy("grouping_column").agg(sum("sum_column").alias("total_sum"))
+ 
+
+
+
+
+# 3. Summing Multiple Columns: To sum values across multiple columns for each row, you can use selectExpr or perform column-wise additions:
+
+from pyspark.sql.functions import col
+
+# Using selectExpr (more concise for many columns)
+df_with_row_sum = df.selectExpr("*", "column1 + column2 + column3 as row_sum")
+
+# Or, using column additions
+df_with_row_sum = df.withColumn("row_sum", col("column1") + col("column2") + col("column3"))
+
+
+
+
+# 4. Rolling Summations: For calculating rolling sums (e.g., a 3-day moving average sum), use Window functions:
+
+from pyspark.sql.window import Window
+from pyspark.sql.functions import sum
+
+# Assuming 'df' has a 'timestamp_column' for ordering and 'value_column' to sum
+window_spec = Window.orderBy("timestamp_column").rowsBetween(-2, 0) # 3-day rolling sum
+
+df_with_rolling_sum = df.withColumn("rolling_sum", sum("value_column").over(window_spec))
+
+
+
+/* 5. Summing Elements within an Array Column: If you have a column of type ArrayType and need to sum its elements, use the higher-order function aggregate: /*
+
+from pyspark.sql.functions import expr
+
+# Assuming 'df' has an array column named 'scores'
+df_with_array_sum = df.withColumn("total_score", expr("AGGREGATE(scores, 0, (acc, x) -> acc + x)"))
+
