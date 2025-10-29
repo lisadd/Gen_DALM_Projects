@@ -1,0 +1,78 @@
+/* Databricks Auto Loader, used with Spark.readStream, is a feature designed for incrementally and efficiently processing new data files as they land in a data lake. It streamlines data ingestion by addressing challenges associated with traditional methods of tracking and loading new files. */
+
+/*  Here's how Auto Loader works and its key features:
+
+- Continuous and Efficient Data Ingestion: Auto Loader continuously monitors a specified cloud storage location (e.g., S3, ADLS Gen2, GCS) for new files. When new files appear, it automatically ingests them into a Spark Structured Streaming pipeline.
+
+- Optimized Cloud File Source: It provides an optimized cloud file source for Spark Structured Streaming, which is more efficient than basic directory listing for discovering new files, especially at scale.
+
+- File Notification Mode: Auto Loader can leverage cloud-native file notification services (like Azure Event Grid and Queue Storage or AWS SQS/SNS) to detect new files, offering a more performant and scalable alternative to directory listing.
+
+- Schema Evolution: It includes features for handling schema evolution, allowing for adaptive schema management as new datasets or schema changes occur in the incoming data.
+
+- Exactly-Once Processing: Auto Loader ensures exactly-once data processing guarantees, preventing duplicate data ingestion.
+
+- Supported File Formats: It supports a wide range of file formats, including JSON, CSV, XML, PARQUET, AVRO, ORC, TEXT, and BINARYFILE.
+
+- Batch and Streaming Modes: While primarily designed for continuous streaming, Auto Loader can also be used in a batch mode with the triggerOnce option for processing data arriving at specific intervals.
+
+- Simplified Configuration: It simplifies the setup and configuration of data ingestion pipelines, reducing the need for custom data engineering logic.
+
+*/
+
+
+
+/* 1. Specify cloudFiles format: When using spark.readStream, you need to specify format("cloudFiles") to enable Autoloader. This tells Spark that you intend to use Autoloader's capabilities for file discovery and ingestion. */
+
+
+    autoLoaderStream = (spark.readStream
+      .format("cloudFiles")
+      # ... other options
+    )
+
+
+
+/* 2. Specify the input path: Use the .load() method to specify the cloud storage path where your data files are located. Autoloader will monitor this path for new files. */
+
+
+    autoLoaderStream = (spark.readStream
+      .format("cloudFiles")
+      .option("cloudFiles.format", "csv")
+      .option("cloudFiles.schemaLocation", "/path/to/schema_location")
+      .load("/path/to/input/directory")
+    )
+
+
+
+/* 3. Write the stream: Finally, you write the streaming DataFrame to a sink (e.g., Delta Lake table, Parquet files) using writeStream. Remember to specify a checkpointLocation for fault tolerance and exactly-once processing guarantees. */
+
+
+    autoLoaderStream.writeStream \
+      .format("delta") \
+      .option("checkpointLocation", "/path/to/checkpoint_location") \
+      .toTable("your_delta_table")
+
+
+
+
+
+# Example of using Auto Loader with Spark.readStream:
+
+df = spark.readStream \
+  .format("cloudFiles") \
+  .option("cloudFiles.format", "json") \
+  .option("cloudFiles.schemaLocation", "/path/to/schema_location") \
+  .load("/path/to/data_lake_folder")
+
+# Further processing and writing to a Delta table
+df.writeStream \
+  .format("delta") \
+  .outputMode("append") \
+  .option("checkpointLocation", "/path/to/checkpoint_location") \
+  .start("/path/to/delta_table")
+
+query.awaitTermination()
+
+
+
+
