@@ -1,0 +1,113 @@
+/*  Managing data in an Azure Machine Learning workspace using the Python SDK (v2) involves creating and interacting with data assets, datastores, and datasets. */
+
+
+/*  1. Connecting to your Azure Machine Learning Workspace:
+First, establish a connection to your Azure Machine Learning workspace using the MLClient and DefaultAzureCredential classes. */
+
+
+from azure.ai.ml import MLClient
+from azure.identity import DefaultAzureCredential
+
+subscription_id = "<YOUR_SUBSCRIPTION_ID>"
+resource_group = "<YOUR_RESOURCE_GROUP>"
+workspace_name = "<YOUR_WORKSPACE_NAME>"
+
+ml_client = MLClient(
+    DefaultAzureCredential(), subscription_id, resource_group, workspace_name
+)
+
+
+
+/* 2. Creating Datastores:
+Datastores are references to storage locations (e.g., Azure Blob Storage, Azure Data Lake Gen2). */
+
+
+from azure.ai.ml.entities import AzureBlobDatastore
+
+blob_datastore = AzureBlobDatastore(
+    name="my_blob_datastore",
+    description="Datastore for my project data",
+    account_name="mytestblobstore",  # Replace with your storage account name
+    container_name="data-container",  # Replace with your container name
+    # Credentials can be provided as account_key, sas_token, or managed_identity
+    credentials={"account_key": "YOUR_STORAGE_ACCOUNT_KEY"},
+)
+
+ml_client.datastores.begin_create_or_update(blob_datastore).result()
+
+
+
+/*  3. Creating Data Assets:
+Data assets represent specific data within your datastores. They can be of type uri_file (for single files), uri_folder (for folders), or mltable (for tabular data). */
+
+
+from azure.ai.ml.entities import Data
+from azure.ai.ml.constants import AssetTypes
+
+# Example: Creating a uri_file data asset
+data_asset_file = Data(
+    name="my_training_data_file",
+    version="1",
+    description="CSV file for model training",
+    path="azureml://datastores/my_blob_datastore/paths/data/train.csv",
+    type=AssetTypes.URI_FILE,
+)
+
+ml_client.data.begin_create_or_update(data_asset_file).result()
+
+# Example: Creating a uri_folder data asset
+data_asset_folder = Data(
+    name="my_image_dataset",
+    version="1",
+    description="Folder containing image data",
+    path="azureml://datastores/my_blob_datastore/paths/images/",
+    type=AssetTypes.URI_FOLDER,
+)
+
+ml_client.data.begin_create_or_update(data_asset_folder).result()
+
+
+
+/*  4. Accessing Data Assets:
+You can retrieve registered data assets and their paths for use in your experiments or pipelines.  */
+
+# Get a specific data asset
+retrieved_data_asset = ml_client.data.get(name="my_training_data_file", version="1")
+print(f"Path of data asset: {retrieved_data_asset.path}")
+
+# List all data assets
+all_data_assets = ml_client.data.list()
+for data_asset in all_data_assets:
+    print(f"Data Asset: {data_asset.name}, Version: {data_asset.version}")
+
+
+
+/* 5. Versioning Data Assets:
+Azure Machine Learning automatically handles versioning for data assets when you create or update them with a new version number. This ensures reproducibility and tracking of data changes. */
+
+
+/* 6. Using Data Assets in Jobs/Pipelines:
+You can reference registered data assets directly within your Azure Machine Learning jobs and pipelines, allowing for seamless data consumption during training or inference. */
+
+
+from azure.ai.ml import command
+from azure.ai.ml import Input
+
+# Example of using a data asset as an input to a command job
+job = command(
+    code="./src",
+    command="python train.py --data ${{inputs.training_data}}",
+    inputs={
+        "training_data": Input(
+            type=AssetTypes.URI_FILE,
+            path="azureml://datastores/my_blob_datastore/paths/data/train.csv",
+        )
+    },
+    environment="AzureML-sklearn-1.0-ubuntu20.04-py38-cpu@latest",
+    display_name="Train Model with Data Asset",
+)
+
+ml_client.jobs.create_or_update(job)
+
+
+
