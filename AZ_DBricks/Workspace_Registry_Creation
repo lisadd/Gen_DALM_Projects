@@ -1,0 +1,132 @@
+/*  AI Overview
+Managing Azure Machine Learning workspaces and registries from Azure Databricks using Python involves leveraging the Azure Machine Learning Python SDK within your Databricks environment.
+
+1. Managing Azure Machine Learning Workspaces:
+
+Authentication: Authenticate to your Azure ML workspace from Databricks using a service principal for automated and secure access. This avoids interactive authentication methods.
+Workspace Creation/Management (via SDK): While you typically create workspaces through the Azure portal or CLI, you can interact with existing workspaces using the Python SDK to manage assets, jobs, and deployments.
+
+
+
+Example of connecting to an existing workspace: */
+
+
+    from azure.ai.ml import MLClient
+    from azure.identity import DefaultAzureCredential
+
+    # Enter details of your Azure ML workspace
+    subscription_id = "<YOUR_SUBSCRIPTION_ID>"
+    resource_group = "<YOUR_RESOURCE_GROUP>"
+    workspace_name = "<YOUR_WORKSPACE_NAME>"
+
+    # Connect to the workspace
+    ml_client = MLClient(
+        DefaultAzureCredential(), subscription_id, resource_group, workspace_name
+    )
+    print(ml_client)
+
+
+
+/*  2. Creating and Managing Registries:
+
+Registries in Azure Machine Learning: Registries allow sharing of models, components, and environments across multiple Azure Machine Learning workspaces. They support multi-region replication for low-latency access.
+Prerequisites: An Azure subscription, an Azure Machine Learning workspace, and the Azure region for your workspace must be supported by Azure Machine Learning registries.
+
+Creating a Registry (via Azure CLI, not directly in Python SDK for creation):
+While you interact with a registry via the Python SDK, its creation is typically handled through the Azure CLI, Azure portal, or REST API. For example, using the CLI:  */
+
+
+    az ml registry create --name <registry-name> --resource-group <resource-group> --location <primary-region> --set-regions <secondary-region-1> <secondary-region-2>
+
+
+
+/* **SDK ***SDK ***SDK:
+
+
+Managing Registry Assets (via SDK): After creation, you can use the Azure ML Python SDK within Azure Databricks to:
+Register models: Store and version your trained models in the registry.
+Share models: Move models from a workspace to a registry.
+Deploy models: Deploy models from a registry to online endpoints in a workspace. 
+Manage components and environments: Similarly, you can register and manage components and environments within the registry for reusability.  */
+
+
+/*Here is how you can manage Registry Assets using the Azure ML Python SDK within Azure Databricks:
+1. Register Models:
+To store and version your trained models in the registry, you can use the Model class and ml_client.models.create_or_update method. */
+
+from azure.ai.ml.entities import Model
+from azure.ai.ml.constants import AssetTypes
+
+# Define the model to register
+model_name = "my-trained-model"
+model_path = "azureml://datastores/workspaceblobstore/paths/models/my-trained-model/model.pkl" # Path to your model file
+
+registered_model = Model(
+    name=model_name,
+    path=model_path,
+    type=AssetTypes.MLFLOW_MODEL, # Or AssetTypes.CUSTOM_MODEL for other formats
+    description="A trained classification model.",
+    tags={"framework": "scikit-learn"}
+)
+
+# Register the model
+ml_client.models.create_or_update(registered_model)
+
+
+
+/*  2. Share Models (Move models from a workspace to a registry):
+While models are typically registered directly into the target registry, if you have a model already registered in a workspace and want to move it to a registry, you would generally re-register it in the registry, potentially referencing the existing model's path. */
+
+
+# Assuming 'workspace_ml_client' for workspace and 'registry_ml_client' for registry
+# Get the model from the workspace
+workspace_model = workspace_ml_client.models.get(name="my-workspace-model", version="1")
+
+# Create a new Model object for the registry, referencing the same path
+registry_model = Model(
+    name="my-shared-model",
+    path=workspace_model.path, # Re-use the path from the workspace model
+    type=workspace_model.type,
+    description="Shared model from workspace",
+    tags=workspace_model.tags
+)
+
+# Register the model in the registry
+registry_ml_client.models.create_or_update(registry_model)
+
+
+
+
+/*  3. Deploy Models:
+Deploying models from a registry to online endpoints in a workspace involves creating an endpoint and a deployment. */
+
+
+from azure.ai.ml.entities import ManagedOnlineEndpoint, ManagedOnlineDeployment, Model
+from azure.ai.ml.constants import AssetTypes
+
+# Get the model from the registry
+model_from_registry = ml_client.models.get(name="my-trained-model", version="latest")
+
+# Create an online endpoint
+endpoint_name = "my-online-endpoint"
+endpoint = ManagedOnlineEndpoint(
+    name=endpoint_name,
+    description="Online endpoint for my trained model",
+    auth_mode="key"
+)
+ml_client.online_endpoints.begin_create_or_update(endpoint).wait()
+
+# Create a deployment
+deployment_name = "blue-deployment"
+deployment = ManagedOnlineDeployment(
+    name=deployment_name,
+    endpoint_name=endpoint_name,
+    model=model_from_registry,
+    instance_type="Standard_DS2_v2",
+    instance_count=1
+)
+ml_client.online_deployments.begin_create_or_update(deployment).wait()
+
+
+
+
