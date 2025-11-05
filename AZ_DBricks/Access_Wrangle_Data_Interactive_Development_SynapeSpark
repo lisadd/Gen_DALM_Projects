@@ -1,0 +1,36 @@
+/*  Wrangle Data Interactively with Attached Synapse Spark Pools and Serverless Spark Compute
+Azure Machine Learning notebooks allow interactive data wrangling using attached Synapse Spark pools or serverless Spark compute. This provides scalable compute resources for larger datasets and more complex transformations. */
+
+
+# Example Code (Azure Machine Learning Notebook):
+
+# Start a session with an attached Synapse Spark pool
+# Replace 'SynapseSparkPoolAlias' with the actual alias of your attached Synapse Spark pool
+%synapse start -c SynapseSparkPoolAlias
+
+# You can also use %%synapse for multi-line commands
+# %%synapse
+# print("Synapse Spark session started.")
+
+# Access data from an Azure Machine Learning Datastore
+# Replace 'DATASTORE_NAME' and 'PATH_TO_DATA' with your specific details
+data_path = "azureml://datastores/DATASTORE_NAME/paths/PATH_TO_DATA"
+
+# Read data using Spark
+# The specific format (e.g., 'csv', 'delta', 'parquet') depends on your data
+df_synapse = spark.read.format("csv").option("header", "true").load(data_path)
+
+# Perform data wrangling operations
+# Example: Group by a column and calculate the average
+aggregated_df_synapse = df_synapse.groupBy("region").avg("sales")
+
+# Display results
+print("Aggregated data from Synapse Spark pool:")
+aggregated_df_synapse.show(5)
+
+# To use Serverless Spark compute, you would typically select it from the compute dropdown
+# in your Azure Machine Learning notebook interface and then proceed with similar Spark operations.
+# No specific code command is needed to "start" serverless Spark, as it's an environment setting.
+
+
+

@@ -1,0 +1,42 @@
+/* Access and Wrangle Data During Interactive Development on Databricks
+When working with Databricks notebooks, you can interactively access and wrangle data using Python with PySpark. This involves reading data from various sources, performing transformations, and exploring the results. */
+
+# Example Code:
+
+# Import SparkSession
+from pyspark.sql import SparkSession
+
+# Get or create a SparkSession
+spark = SparkSession.builder.appName("InteractiveDataWrangling").getOrCreate()
+
+# Read data from a Delta table (common in Databricks)
+# Replace 'your_delta_table' with the actual table name
+df = spark.read.format("delta").table("your_delta_table")
+
+# Display the first few rows of the DataFrame
+print("Initial DataFrame:")
+df.show(5)
+
+# Perform some data wrangling operations
+# Filter rows where 'category' is 'Electronics'
+filtered_df = df.filter(df.category == "Electronics")
+
+# Select specific columns and add a new calculated column
+transformed_df = filtered_df.select("product_name", "price", (df.price * 0.9).alias("discounted_price"))
+
+# Display the transformed DataFrame
+print("\nTransformed DataFrame:")
+transformed_df.show(5)
+
+# You can also use SQL within a Python notebook
+# Create a temporary view
+df.createOrReplaceTempView("products_temp_view")
+
+# Run a SQL query
+sql_results_df = spark.sql("SELECT product_name, price FROM products_temp_view WHERE price > 100 ORDER BY price DESC")
+
+# Display SQL query results
+print("\nSQL Query Results:")
+sql_results_df.show(5)
+
+
