@@ -1,0 +1,115 @@
+/* Manage compute, select environments, configure attached resources, monitor utilization, and explore data/train models in Azure Machine Learning with Python, including Databricks and Synapse Spark: */
+
+# 1. Manage Compute for Experiments:
+
+from azure.ai.ml import MLClient
+from azure.identity import DefaultAzureCredential
+from azure.ai.ml.entities import AmlCompute
+
+# Connect to your workspace
+ml_client = MLClient(
+    DefaultAzureCredential(),
+    subscription_id="<YOUR_SUBSCRIPTION_ID>",
+    resource_group_name="<YOUR_RESOURCE_GROUP>",
+    workspace_name="<YOUR_WORKSPACE_NAME>",
+)
+
+# Create a new AmlCompute cluster
+compute_name = "cpu-cluster"
+compute_cluster = AmlCompute(
+    name=compute_name,
+    type="amlcompute",
+    size="STANDARD_DS3_V2",
+    min_instances=0,
+    max_instances=4,
+    idle_time_before_scale_down=120,
+)
+ml_client.compute.begin_create_or_update(compute_cluster).result()
+
+
+
+# 2. Select an Environment for a Machine Learning Use Case:
+
+from azure.ai.ml import MLClient
+from azure.identity import DefaultAzureCredential
+from azure.ai.ml.entities import Environment
+
+# Connect to your workspace (as above)
+ml_client = MLClient(
+    DefaultAzureCredential(),
+    subscription_id="<YOUR_SUBSCRIPTION_ID>",
+    resource_group_name="<YOUR_RESOURCE_GROUP>",
+    workspace_name="<YOUR_WORKSPACE_NAME>",
+)
+
+# Create a custom environment from a Docker image and Conda file
+env_name = "my-custom-env"
+my_environment = Environment(
+    name=env_name,
+    image="mcr.microsoft.com/azureml/openmpi4.1.0-ubuntu20.04:latest",
+    conda_file="./conda_dependencies.yml",  # Define your dependencies here
+)
+ml_client.environments.begin_create_or_update(my_environment).result()
+
+
+# 3. Configure Attached Compute Resources (Azure Synapse Spark Pools & Serverless Spark):
+
+from azure.ai.ml import MLClient
+from azure.identity import DefaultAzureCredential
+from azure.ai.ml.entities import SynapseSparkCompute
+
+# Connect to your workspace (as above)
+ml_client = MLClient(
+    DefaultAzureCredential(),
+    subscription_id="<YOUR_SUBSCRIPTION_ID>",
+    resource_group_name="<YOUR_RESOURCE_GROUP>",
+    workspace_name="<YOUR_WORKSPACE_NAME>",
+)
+
+# Attach an existing Azure Synapse Spark Pool
+synapse_compute_name = "my-synapse-spark"
+synapse_compute = SynapseSparkCompute(
+    name=synapse_compute_name,
+    resource_id="/subscriptions/<YOUR_SUBSCRIPTION_ID>/resourceGroups/<YOUR_SYNAPSE_RESOURCE_GROUP>/providers/Microsoft.Synapse/workspaces/<YOUR_SYNAPSE_WORKSPACE>/bigDataPools/<YOUR_SPARK_POOL_NAME>",
+)
+ml_client.compute.begin_create_or_update(synapse_compute).result()
+
+# For serverless Spark, you would specify 'spark' as the compute target in your job definition
+# when submitting a Spark job, without needing to explicitly attach a resource first.
+
+
+
+# 4. Explore Data and Train Models:
+
+from azure.ai.ml import MLClient, command
+from azure.identity import DefaultAzureCredential
+from azure.ai.ml.entities import Data
+
+# Connect to your workspace (as above)
+ml_client = MLClient(
+    DefaultAzureCredential(),
+    subscription_id="<YOUR_SUBSCRIPTION_ID>",
+    resource_group_name="<YOUR_RESOURCE_GROUP>",
+    workspace_name="<YOUR_WORKSPACE_NAME>",
+)
+
+# Register a data asset (example using a local file)
+my_data = Data(
+    name="my-training-data",
+    path="./data/iris.csv",
+    type="uri_file",
+    description="Iris dataset for classification",
+)
+ml_client.data.begin_create_or_update(my_data).result()
+
+# Define and submit a training job
+job = command(
+    code="./src",  # Path to your training script
+    command="python train.py --data_path ${{inputs.data}}",
+    inputs={"data": my_data},
+    environment="my-custom-env@latest",  # Use the environment created earlier
+    compute="cpu-cluster",  # Use the AmlCompute cluster
+    display_name="iris-classification-training",
+)
+ml_client.jobs.begin_create_or_update(job).result()
+

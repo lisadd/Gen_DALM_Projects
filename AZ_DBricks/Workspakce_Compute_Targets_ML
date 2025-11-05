@@ -1,0 +1,73 @@
+/*  Creating and managing compute targets for experiments and training within Azure Machine Learning, especially when integrating with Azure Databricks, involves several steps.
+1. Understanding Compute Targets:
+A compute target is the designated resource where your training script or service deployment runs. This can be your local machine, an Azure Machine Learning Compute Instance/Cluster, or an attached resource like Azure Databricks.
+Compute targets can be reused across multiple jobs and experiments. 
+2. Creating Azure ML Compute Targets:
+Azure Machine Learning Compute Clusters: These are scalable, managed compute resources within your Azure ML workspace. You can create them via the Azure ML Studio UI or programmatically using the Azure ML SDK. */
+
+    from azureml.core.compute import ComputeTarget, AmlCompute
+    from azureml.core.compute_conf import AmlComputeConfig
+
+    # Choose a name for your cluster
+    cluster_name = "my-aml-cluster"
+
+    # Verify that cluster does not already exist
+    if cluster_name not in ws.compute_targets:
+        compute_config = AmlComputeConfig(vm_size="STANDARD_DS3_V2",
+                                          max_nodes=4) # Adjust vm_size and max_nodes as needed
+        compute_target = ComputeTarget.create(ws, cluster_name, compute_config)
+        compute_target.wait_for_completion(show_output=True)
+    else:
+        compute_target = ws.compute_targets[cluster_name]
+
+
+/* Azure Machine Learning Compute Instances: These are single-node, cloud-based workstations for development and testing. They can also be used for training. */
+
+
+
+/* 3. Integrating Azure Databricks as a Compute Target:
+Azure Databricks can be attached to your Azure Machine Learning workspace as a compute target, particularly useful for data preparation and machine learning pipelines that leverage Spark.
+You can attach an existing Azure Databricks workspace using the Azure ML SDK. */
+
+
+    from azureml.core.compute import ComputeTarget, DatabricksCompute
+    from azureml.core.compute_conf import DatabricksComputeConfiguration
+
+    # Choose a name for the Databricks compute target in Azure ML
+    databricks_compute_name = "my-databricks-compute"
+
+    # If the Databricks compute target doesn't exist, create it
+    if databricks_compute_name not in ws.compute_targets:
+        databricks_config = DatabricksComputeConfiguration(
+            resource_group="your_databricks_resource_group",
+            workspace_name="your_databricks_workspace_name",
+            access_token="your_databricks_access_token" # Obtain from Databricks
+        )
+        databricks_compute = ComputeTarget.create(ws, databricks_compute_name, databricks_config)
+        databricks_compute.wait_for_completion(show_output=True)
+    else:
+        databricks_compute = ws.compute_targets[databricks_compute_name]
+
+
+
+/*  4. Using Compute Targets in Experiments:
+When submitting an experiment run, specify the desired compute target in your ScriptRunConfig. */
+
+
+    from azureml.core import Experiment, ScriptRunConfig, Environment
+
+    # Assuming 'compute_target' is your created AmlCompute or DatabricksCompute object
+    # Assuming 'env' is your defined Azure ML Environment
+
+    script_run_config = ScriptRunConfig(source_directory='./scripts',
+                                        script='train.py',
+                                        compute_target=compute_target,
+                                        environment=env)
+
+    experiment = Experiment(workspace=ws, name='my-training-experiment')
+    run = experiment.submit(script_run_config)
+    run.wait_for_completion(show_output=True)
+
+
+
+:
