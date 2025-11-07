@@ -1,0 +1,26 @@
+/* Develop Code by Using a Compute Instance
+When using a notebook for custom model training, you typically connect to a compute instance (e.g., a virtual machine or a managed compute environment like Azure Machine Learning compute instances or AWS SageMaker instances). The following example shows a basic setup using common libraries. */
+
+
+# Develop Code by Using a Compute Instance - Example Logistic Regression:
+
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LogisticRegression
+
+# Load data (replace with your actual data source)
+data = pd.read_csv("your_data.csv")
+
+# Prepare features (X) and target (y)
+X = data.drop("target_column", axis=1)
+y = data["target_column"]
+
+# Split data into training and testing sets
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# Initialize and train a model
+model = LogisticRegression(solver='liblinear')
+model.fit(X_train, y_train)
+
+print("Model training complete on the compute instance.")
+
