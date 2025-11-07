@@ -1,0 +1,101 @@
+/* Hyperparameter tuning in Databricks with Azure Machine Learning involves defining a search space for hyperparameters, selecting a sampling method, and defining a primary metric to optimize.
+ */
+
+
+# 1. Define the Search Space:
+/*  The search space specifies the range of values for each hyperparameter to be explored during tuning. You can define discrete or continuous hyperparameters using distributions.
+/*
+
+
+from azure.ai.ml.sweep import Choice, Uniform, Normal
+
+command_job_for_sweep = command_job(
+    learning_rate=Normal(mu=0.01, sigma=0.005),  # Continuous hyperparameter with normal distribution
+    batch_size=Choice(values=[16, 32, 64]),      # Discrete hyperparameter with specific choices
+    optimizer=Choice(values=["adam", "sgd"]),    # Discrete hyperparameter with specific choices
+    # Add other hyperparameters as needed
+)
+
+
+
+# 2. Select a Sampling Method:
+/* The sampling method determines how hyperparameter combinations are chosen from the defined search space. Common methods include random sampling, grid sampling, and Bayesian sampling.
+*/
+
+from azure.ai.ml.sweep import RandomParameterSampling, GridParameterSampling, BayesianParameterSampling
+
+# Example with Random Sampling
+sweep_job_random = command_job_for_sweep.sweep(
+    sampling_algorithm=RandomParameterSampling(
+        rule="random",
+        # Optionally, specify parameter distributions for random sampling if not already defined in command_job_for_sweep
+    ),
+    # ... other sweep configurations
+)
+
+# Example with Grid Sampling (for discrete hyperparameters)
+sweep_job_grid = command_job_for_sweep.sweep(
+    sampling_algorithm=GridParameterSampling(),
+    # ... other sweep configurations
+)
+
+# Example with Bayesian Sampling
+sweep_job_bayesian = command_job_for_sweep.sweep(
+    sampling_algorithm=BayesianParameterSampling(),
+    # ... other sweep configurations
+)
+
+
+
+# 3. Define the Primary Metric:
+
+/* The primary metric is the performance indicator that Azure Machine Learning will optimize during hyperparameter tuning. You also specify whether the goal is to maximize or minimize this metric.
+*/
+
+
+sweep_job = command_job_for_sweep.sweep(
+    # ... sampling_algorithm and other configurations
+    primary_metric="accuracy",  # Name of the metric to optimize
+    goal="Maximize",            # Whether to maximize or minimize the metric
+    # ... other sweep configurations
+)
+
+
+# Example of a Full Sweep Job Configuration:
+
+from azure.ai.ml import command, Input
+from azure.ai.ml.sweep import Choice, Uniform, RandomParameterSampling
+
+# Define your training script as a command job
+train_job = command(
+    code="./src",  # Path to your training script
+    command="python train.py --learning-rate ${{inputs.learning_rate}} --batch-size ${{inputs.batch_size}}",
+    environment="azureml:AzureML-sklearn-1.0-ubuntu20.04-py38-cpu@latest", # Your environment
+    inputs={
+        "data": Input(type="uri_folder", path="azureml://datastores/workspaceblobstore/paths/data/diabetes"),
+        "learning_rate": 0.01, # Default value, will be overridden by sweep
+        "batch_size": 32,      # Default value, will be overridden by sweep
+    },
+    display_name="Hyperparameter Tuning Example",
+)
+
+# Define the search space and sampling method
+sweep_job = train_job.sweep(
+    compute="your-compute-cluster", # Name of your Azure ML compute cluster
+    sampling_algorithm=RandomParameterSampling(
+        rule="random",
+    ),
+    inputs={
+        "learning_rate": Uniform(min_value=0.001, max_value=0.1),
+        "batch_size": Choice(values=[16, 32, 64, 128]),
+    },
+    primary_metric="accuracy",
+    goal="Maximize",
+    max_total_runs=20, # Maximum number of runs for the sweep
+)
+
+# Submit the sweep job
+# ml_client.jobs.create_or_update(sweep_job)
+
+
+   
