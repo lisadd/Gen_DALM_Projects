@@ -1,4 +1,4 @@
-DP-300:f
+DP-300:
 
 Knowledge of and experience with:
  - Azure SQL Database
