@@ -1,0 +1,100 @@
+1. Azure CLI
+Azure CLI commands are used to create and manage Azure resources via the command line or scripts. The core commands for deployment generally involve creating a resource group first, then deploying the specific resource.
+
+Create an Azure SQL Database:
+
+# Create a resource group
+az group create --name MyResourceGroup --location "Central US"
+
+# Create an Azure SQL Server
+az sql server create --name myservername --resource-group MyResourceGroup --location "Central US" --admin-user <admin-username> --admin-password <admin-password>
+
+# Create an Azure SQL Database within the server
+az sql db create --name mydatabase --resource-group MyResourceGroup --server myservername --service-objective S0
+
+
+
+Deploy an ARM Template using Azure CLI:
+
+az deployment group create --resource-group ExampleGroup --template-file <path-to-template.json> --parameters storageAccountType=Standard_GRS
+
+
+2. ARM Template
+ARM templates are JSON or Bicep files that define the infrastructure and configuration of your Azure resources declaratively. This allows for consistent and repeatable deployments. 
+A simple ARM template for an Azure SQL server and database would define resources with types like Microsoft.Sql/servers and Microsoft.Sql/servers/databases. 
+
+
+Example Snippet:
+{
+  "$schema": "schema.management.azure.com",
+  "contentVersion": "1.0.0.0",
+  "resources": [
+    {
+      "type": "Microsoft.Sql/servers",
+      "apiVersion": "2021-11-01",
+      "name": "[parameters('sqlServerName')]",
+      "location": "[parameters('location')]",
+      "properties": {
+        "administratorLogin": "[parameters('sqlServerAdministratorLogin')]",
+        "administratorLoginPassword": "[parameters('sqlServerAdministratorLoginPassword')]"
+      }
+    },
+    {
+      "type": "Microsoft.Sql/servers/databases",
+      "apiVersion": "2021-11-01",
+      "name": "[concat(parameters('sqlServerName'), '/', parameters('sqlDatabaseName'))]",
+      "location": "[parameters('location')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Sql/servers', parameters('sqlServerName'))]"
+      ],
+      "sku": {
+        "name": "S0"
+      }
+    }
+  ]
+}
+
+
+3. Python Code
+Deployment using Python involves using the Azure SDK for Python, specifically the azure-mgmt-resource and database-specific libraries (e.g., azure-mgmt-sql, azure-mgmt-cosmosdb). 
+
+
+Example Python script (using azure-mgmt-resource and azure-mgmt-sql):
+
+import os
+from azure.identity import DefaultAzureCredential
+from azure.mgmt.resource import ResourceManagementClient
+from azure.mgmt.sql import SqlManagementClient
+
+# Obtain credentials
+credential = DefaultAzureCredential()
+subscription_id = os.environ["AZURE_SUBSCRIPTION_ID"]
+resource_group_name = "MyResourceGroup"
+location = "Central US"
+sql_server_name = "myservername"
+sql_database_name = "mydatabase"
+
+# Create resource management and SQL clients
+resource_client = ResourceManagementClient(credential, subscription_id)
+sql_client = SqlManagementClient(credential, subscription_id)
+
+# Provision the resource group (if it doesn't exist)
+resource_client.resource_groups.create_or_update(resource_group_name, {"location": location})
+
+# Provision the SQL Server (admin credentials from environment variables for security)
+sql_server_params = {
+    "location": location,
+    "administrator_login": os.environ["SQL_ADMIN_USER"],
+    "administrator_login_password": os.environ["SQL_ADMIN_PASSWORD"]
+}
+sql_client.servers.begin_create_or_update(resource_group_name, sql_server_name, sql_server_params).result()
+
+# Provision the SQL Database
+sql_database_params = {
+    "location": location,
+    "sku": {"name": "S0"}
+}
+sql_client.databases.begin_create_or_update(resource_group_name, sql_server_name, sql_database_name, sql_database_params).result()
+
+
+ 
