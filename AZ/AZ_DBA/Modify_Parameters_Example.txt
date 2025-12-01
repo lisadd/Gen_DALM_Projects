@@ -1,0 +1,118 @@
+Bicep: Define and Modify Parameters
+
+// Define Parameter in Bicep File:
+
+@description('Provide a name for the storage account. Use only lowercase letters and numbers. The name must be unique across Azure.')
+@minLength(3)
+@maxLength(24)
+param storageAccountName string = 'store${uniqueString(resourceGroup().id)}'
+
+@description('Location for all resources.')
+param location string = resourceGroup().location
+
+@description('Storage Account SKU')
+@allowed([
+  'Standard_LRS'
+  'Standard_GRS'
+  'Standard_ZRS'
+  'Premium_LRS'
+])
+param storageAccountSku string = 'Standard_LRS'
+
+
+// Modify Parameter in Bicep Parameter File (.bicepparam):
+
+
+using './main.bicep'
+
+param storageAccountName = 'myuniquestorageaccount'
+param location = 'eastus'
+param storageAccountSku = 'Premium_LRS'
+Azure CLI: Deploy Bicep with Parameters
+
+// Deploy with Inline Parameters:
+
+
+az deployment group create \
+  --resource-group myResourceGroup \
+  --template-file main.bicep \
+  --parameters storageAccountName='myinlinestorage' location='westus' storageAccountSku='Standard_GRS'
+
+// Deploy with a Bicep Parameter File:
+
+
+az deployment group create \
+  --resource-group myResourceGroup \
+  --parameters main.bicepparam
+
+
+// Deploy with a JSON Parameter File:
+
+
+// main.parameters.json
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "storageAccountName": {
+      "value": "myjsonstorage"
+    },
+    "location": {
+      "value": "centralus"
+    },
+    "storageAccountSku": {
+      "value": "Standard_ZRS"
+    }
+  }
+}
+
+
+az deployment group create \
+  --resource-group myResourceGroup \
+  --template-file main.bicep \
+  --parameters @main.parameters.json
+
+
+
+
+/// Azure SDK (Python Example): Deploy Bicep with Parameters in Python
+
+from azure.identity import DefaultAzureCredential
+from azure.mgmt.resource import ResourceManagementClient
+
+# Authenticate using DefaultAzureCredential (handles various auth methods)
+credential = DefaultAzureCredential()
+
+# Initialize Resource Management Client
+subscription_id = "YOUR_SUBSCRIPTION_ID"
+resource_client = ResourceManagementClient(credential, subscription_id)
+
+resource_group_name = "myResourceGroup"
+deployment_name = "myDeployment"
+template_file_path = "main.bicep" # Path to your Bicep file
+
+# Parameters as a dictionary
+parameters = {
+    "storageAccountName": {"value": "mysdkstorage"},
+    "location": {"value": "eastus2"},
+    "storageAccountSku": {"value": "Premium_LRS"}
+}
+
+# Read Bicep file content
+with open(template_file_path, "r") as f:
+    template_content = f.read()
+
+# Deploy the Bicep template
+resource_client.deployments.begin_create_or_update(
+    resource_group_name,
+    deployment_name,
+    {
+        "properties": {
+            "template": template_content,
+            "parameters": parameters,
+            "mode": "Incremental"
+        }
+    }
+).result()
+
+print(f"Deployment '{deployment_name}' created or updated successfully.")
