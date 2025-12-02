@@ -1,0 +1,26 @@
+2. Create Fact Tables and Dimension Tables
+This example demonstrates creating a simple star schema with a fact table and a dimension table.
+
+from pyspark.sql import SparkSession
+from pyspark.sql.functions import current_date
+
+spark = SparkSession.builder.appName("FactDimensionTables").getOrCreate()
+
+# Create a sample Dimension Table (e.g., DimProduct)
+data_dim_product = [(1, "Laptop", "Electronics"), (2, "Mouse", "Electronics"), (3, "Keyboard", "Peripherals")]
+df_dim_product = spark.createDataFrame(data_dim_product, ["product_id", "product_name", "category"])
+df_dim_product.createOrReplaceTempView("DimProduct")
+
+# Create a sample Fact Table (e.g., FactSales)
+data_fact_sales = [(101, 1, 2, 1200.00, current_date()), (102, 2, 1, 25.00, current_date()), (103, 1, 1, 600.00, current_date())]
+df_fact_sales = spark.createDataFrame(data_fact_sales, ["sale_id", "product_id", "quantity", "price", "sale_date"])
+df_fact_sales.createOrReplaceTempView("FactSales")
+
+print("DimProduct:")
+spark.sql("SELECT * FROM DimProduct").show()
+print("FactSales:")
+spark.sql("SELECT * FROM FactSales").show()
+
+
+
+
