@@ -1,0 +1,31 @@
+
+// In a Notebook (PySpark):
+
+1. Select Appropriate Column:
+
+    from pyspark.sql.types import IntegerType, StringType
+    df = df.withColumn("column_name", df["column_name"].cast(IntegerType()))
+
+
+2. Create and Transform Columns:
+In a Dataflow: Use the "Add Column" or "Custom Column" features in Power Query Editor.
+In a Notebook (PySpark):
+
+
+    df = df.withColumn("new_column", df["column1"] + df["column2"])
+
+3. Group and Aggregate Rows:
+In a Dataflow: Use the "Group By" feature in Power Query Editor.
+In a Notebook (PySpark):
+
+    df.groupBy("category_column").agg({"value_column": "sum"}).show()
+
+
+4. Pivot, Unpivot, and Transpose Data:
+In a Dataflow: Use the "Pivot Column" and "Unpivot Columns" features in Power Query Editor.
+In a Notebook (PySpark - Pivot Example):
+
+    df.groupBy("category").pivot("pivot_column").agg({"value_column": "sum"}).show()
+
+
+

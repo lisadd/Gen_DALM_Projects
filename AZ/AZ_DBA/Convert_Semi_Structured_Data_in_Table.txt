@@ -1,0 +1,26 @@
+1. Convert Semi-structured Data to a Table:
+This example converts JSON data (a common semi-structured format) into a PySpark DataFrame (table).
+
+from pyspark.sql import SparkSession
+from pyspark.sql.functions import col, explode
+
+spark = SparkSession.builder.appName("SemiStructuredToTable").getOrCreate()
+
+# Sample semi-structured JSON data
+json_data = """
+[
+  {"id": 1, "name": "Alice", "details": {"age": 30, "city": "New York"}},
+  {"id": 2, "name": "Bob", "details": {"age": 25, "city": "London"}}
+]
+"""
+
+# Create a DataFrame from the JSON string
+df_json = spark.read.json(spark.sparkContext.parallelize([json_data]))
+
+# Flatten the 'details' struct to individual columns
+df_table = df_json.select(col("id"), col("name"), col("details.age").alias("age"), col("details.city").alias("city"))
+
+df_table.show()
+
+
+

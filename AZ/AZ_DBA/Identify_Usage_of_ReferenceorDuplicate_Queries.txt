@@ -1,0 +1,21 @@
+3. Identify when to use Reference or Duplicate Queries and the resulting impact
+Reference Query: In PySpark, this is akin to creating a view or a temporary table. It doesn't duplicate data but provides a logical alias to an existing DataFrame. Changes to the original DataFrame are reflected in the reference.
+Duplicate Query: This involves creating a new DataFrame by copying the data from an existing one, often using df.copy() (though not directly available in PySpark in the same way as Pandas) or by performing a transformation that results in new data. Duplicating can be memory-intensive for large datasets but provides an isolated copy for independent operations.
+
+
+Example (Reference vs. Duplicate concept):
+
+# Reference (using a view)
+df_original = spark.createDataFrame([(1, "A"), (2, "B")], ["id", "value"])
+df_original.createOrReplaceTempView("original_view")
+
+# Duplicate (creating a new DataFrame)
+df_duplicate = df_original.filter(col("id") > 1) # This creates a new DataFrame
+
+# Impact:
+# Changes to df_original would be reflected in original_view.
+# df_duplicate is independent of df_original after creation.
+
+
+
+
