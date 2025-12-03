@@ -1,0 +1,22 @@
+Configure Data Loading for Queries
+This involves specifying options when reading data from various sources.
+
+# Loading CSV with header and inferring schema
+df_csv = spark.read.option("header", "true").option("inferSchema", "true").csv("path/to/your/file.csv")
+
+# Loading Parquet
+df_parquet = spark.read.parquet("path/to/your/file.parquet")
+
+# Loading JSON with specific schema
+from pyspark.sql.types import StructType, StructField, StringType, IntegerType
+schema = StructType([
+    StructField("name", StringType(), True),
+    StructField("age", IntegerType(), True)
+])
+df_json_schema = spark.read.schema(schema).json("path/to/your/file.json")
+
+# Writing data (example for saving)
+df_table.write.mode("overwrite").parquet("output/path/table_data.parquet")
+
+
+
