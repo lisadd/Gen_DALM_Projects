@@ -1,0 +1,18 @@
+Merge and Append Queries
+
+Merge (Join): Combining DataFrames based on a common key.
+Append (Union): Stacking DataFrames with the same schema on top of each other.
+Python
+
+# Merge (Join)
+df_merged = df_fact_sales.join(df_dim_product, "product_id", "inner")
+print("Merged DataFrame:")
+df_merged.show()
+
+# Append (Union)
+data_more_sales = [(104, 3, 5, 50.00, current_date())]
+df_more_sales = spark.createDataFrame(data_more_sales, ["sale_id", "product_id", "quantity", "price", "sale_date"])
+df_appended = df_fact_sales.union(df_more_sales)
+print("Appended DataFrame:")
+df_appended.show()
+#

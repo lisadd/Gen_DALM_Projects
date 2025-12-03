@@ -1,0 +1,7 @@
+Identify and Create Appropriate Keys for Relationships:
+
+	- Primary Key: Uniquely identifies each row in a table (e.g., product_id in DimProduct).
+	
+	- Foreign Key: A column in one table that refers to the primary key in another table, establishing a relationship (e.g., product_id in FactSales referencing product_id in DimProduct).
+
+Creation: Keys are implicitly defined by the chosen columns during join operations or explicitly designated when designing your data model. In the examples above, product_id serves as a primary key in DimProduct and a foreign key in FactSales.

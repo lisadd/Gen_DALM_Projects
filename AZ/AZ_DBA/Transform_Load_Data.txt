@@ -1,0 +1,55 @@
+PySpark notebooks provide an interactive environment to perform Extract, Transform, and Load (ETL) operations on large datasets. Here are examples demonstrating these steps:
+
+
+// 1. Extract (Load Data):
+This example loads a CSV file into a PySpark DataFrame.
+
+from pyspark.sql import SparkSession
+
+# Initialize SparkSession (if not already running in a notebook environment)
+spark = SparkSession.builder.appName("ETL_Example").getOrCreate()
+
+# Load data from a CSV file
+# Replace 'path/to/your/data.csv' with the actual path to your file
+df = spark.read.csv("path/to/your/data.csv", header=True, inferSchema=True)
+
+# Display the schema and some data
+df.printSchema()
+df.show(5)
+
+
+
+
+// 2. Transform Data:
+This example demonstrates common transformations like selecting columns, filtering, and adding a new column.
+
+from pyspark.sql.functions import col, lit
+
+# Select specific columns
+df_selected = df.select("column1", "column2", "column3")
+
+# Filter rows based on a condition
+df_filtered = df_selected.filter(col("column1") > 10)
+
+# Add a new column with a literal value
+df_transformed = df_filtered.withColumn("new_column", lit("processed"))
+
+# Display the transformed DataFrame
+df_transformed.show(5)
+
+
+
+
+// 3. Load Data:
+This example shows how to save the transformed DataFrame to a new file (e.g., Parquet) or a Delta table.
+
+
+# Save DataFrame to a Parquet file
+# Replace 'path/to/output.parquet' with your desired output path
+df_transformed.write.mode("overwrite").parquet("path/to/output.parquet")
+
+# Save DataFrame to a Delta table (requires Delta Lake integration)
+# Replace 'your_database.your_table' with your desired table name
+# df_transformed.write.format("delta").mode("overwrite").saveAsTable("your_database.your_table")
+
+print("Data loaded and saved successfully.")
