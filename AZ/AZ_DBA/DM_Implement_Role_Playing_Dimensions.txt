@@ -1,0 +1,129 @@
+Implementing role-playing dimensions in PySpark involves using a single physical dimension table multiple times in a fact table by joining it with different aliases and on different foreign keys. This approach prevents data duplication and ensures consistency in analysis. 
+
+Below are PySpark notebook examples demonstrating the setup and query of a role-playing dimension, using a Date_Dim table as a classic example for Order Date and Ship Date. 
+
+PySpark Implementation Steps
+
+// 1. Setup Spark Session and Define Schemas 
+
+First, set up the Spark session and define the schemas for the fact and dimension tables. 
+
+from pyspark.sql import SparkSession
+from pyspark.sql.types import StructType, StructField, IntegerType, StringType, DateType, DecimalType
+from pyspark.sql.functions import datediff, col, sum
+
+# Initialize Spark Session (for use in a notebook environment)
+spark = SparkSession.builder.appName("RolePlayingDimExample").getOrCreate()
+
+# Define Schema for Date Dimension
+date_dim_schema = StructType([
+    StructField("Date_Key", IntegerType(), False),
+    StructField("Full_Date", DateType(), False),
+    StructField("Year", IntegerType(), False),
+    StructField("Month", StringType(), False),
+    StructField("Quarter", StringType(), False)
+])
+
+# Define Schema for Sales Fact
+sales_fact_schema = StructType([
+    StructField("Sale_ID", IntegerType(), False),
+    StructField("Order_Date_Key", IntegerType(), False),
+    StructField("Ship_Date_Key", IntegerType(), False),
+    StructField("Product_Key", IntegerType(), False),
+    StructField("Sales_Amount", DecimalType(10, 2), False)
+])
+
+
+
+
+// 2. Create Sample DataFrames
+Next, create sample data for the dimension and fact tables. 
+
+
+# Date Dimension Data
+date_dim_data = [
+    (20240301, date(2024, 3, 1), 2024, "March", "Q1"),
+    (20240302, date(2024, 3, 2), 2024, "March", "Q1"),
+    (20240303, date(2024, 3, 3), 2024, "March", "Q1"),
+    (20240304, date(2024, 3, 4), 2024, "March", "Q1")
+]
+date_dim_df = spark.createDataFrame(date_dim_data, schema=date_dim_schema)
+
+# Sales Fact Data
+sales_fact_data = [
+    (101, 20240301, 20240303, 1001, 200.0), # Order on Mar 1, Ship on Mar 3
+    (102, 20240302, 20240304, 1002, 150.0), # Order on Mar 2, Ship on Mar 4
+    (103, 20240302, 20240302, 1001, 300.0)  # Order and Ship on Mar 2
+]
+sales_fact_df = spark.createDataFrame(sales_fact_data, schema=sales_fact_schema)
+
+# Display dataframes
+print("Date Dimension:")
+date_dim_df.show()
+print("Sales Fact:")
+sales_fact_df.show()
+
+
+
+// 3. Implement Role-Playing with Joins and Aliases 
+The core of the technique in PySpark involves joining the same date_dim_df to the fact table multiple times, using distinct aliases for each role (e.g., order_date_dim and ship_date_dim). 
+
+
+# Join the Fact table with the Date dimension for the 'Order Date' role
+# We alias the date dimension as 'OD' for Order Date
+sales_with_order_date_df = sales_fact_df.join(
+    date_dim_df.alias("OD"),
+    sales_fact_df["Order_Date_Key"] == col("OD.Date_Key"),
+    "inner"
+).select(
+    sales_fact_df["*"],
+    col("OD.Full_Date").alias("Order_Date"),
+    col("OD.Month").alias("Order_Month"),
+    col("OD.Year").alias("Order_Year")
+)
+
+# Now, join the resulting DataFrame with the Date dimension again for the 'Ship Date' role
+# We alias the date dimension as 'SD' for Ship Date
+final_sales_df = sales_with_order_date_df.join(
+    date_dim_df.alias("SD"),
+    sales_with_order_date_df["Ship_Date_Key"] == col("SD.Date_Key"),
+    "inner"
+).select(
+    sales_with_order_date_df["*"],
+    col("SD.Full_Date").alias("Ship_Date"),
+    col("SD.Month").alias("Ship_Month"),
+    col("SD.Year").alias("Ship_Year")
+)
+
+# Show the result with all role-playing dimensions
+print("Final Sales DataFrame with Role-Playing Dates:")
+final_sales_df.show()
+
+
+
+
+
+// 4. Perform Analysis 
+With the role-playing dimensions correctly aliased and joined, you can perform analysis, such as calculating the number of days to ship. 
+
+
+# Calculate DaysToShip using the different date columns
+analysis_df = final_sales_df.withColumn(
+    "DaysToShip",
+    datediff(col("Ship_Date"), col("Order_Date"))
+)
+
+print("Analysis with DaysToShip:")
+analysis_df.show()
+
+# Example aggregation: Total sales by Order Year and Ship Year
+aggregation_df = analysis_df.groupBy("Order_Year", "Ship_Year").agg(
+    sum("Sales_Amount").alias("Total_Sales")
+).orderBy("Order_Year", "Ship_Year")
+
+print("Sales Aggregation by Order/Ship Year:")
+aggregation_df.show()
+
+
+
+

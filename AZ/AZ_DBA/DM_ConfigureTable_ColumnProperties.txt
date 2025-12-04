@@ -1,0 +1,131 @@
+/* In PySpark, you can configure table and column properties, such as comments and physical properties, primarily using SQL DDL statements executed via spark.sql() in a notebook. While you can define column metadata in a DataFrame schema, SQL provides more direct control over persistent table properties. 
+
+Below are PySpark notebook examples demonstrating how to configure table and column properties for data modeling purposes.
+Prerequisites
+
+You need a Spark session running in your notebook. */
+
+
+from pyspark.sql import SparkSession
+
+# Initialize Spark session if not already available (common in non-Databricks notebooks)
+spark = SparkSession.builder.appName("DataModeling").getOrCreate()
+
+
+// 1. Configure Table Properties 
+Table properties are useful for defining metadata, storage formats, and optimization settings (e.g., Delta Lake specific properties). 
+
+A. Set Properties During Table Creation 
+You can set properties when creating a new table using a CREATE TABLE SQL command. 
+
+
+%%sql
+CREATE TABLE IF NOT EXISTS sales_data (
+    id INT,
+    product_name STRING,
+    sale_date DATE
+) USING DELTA
+COMMENT 'This table stores daily sales information for the company.'
+TBLPROPERTIES (
+    'delta.appendOnly' = 'true',
+    'customer.property' = 'value'
+);
+
+
+In a PySpark cell:
+
+
+spark.sql("""
+CREATE TABLE IF NOT EXISTS sales_data (
+    id INT,
+    product_name STRING,
+    sale_date DATE
+) USING DELTA
+COMMENT 'This table stores daily sales information for the company.'
+TBLPROPERTIES (
+    'delta.appendOnly' = 'true',
+    'customer.property' = 'value'
+""")
+
+
+# B. Modify Properties of an Existing Table 
+You can alter properties of an existing table using ALTER TABLE SET TBLPROPERTIES. 
+
+
+spark.sql("ALTER TABLE sales_data SET TBLPROPERTIES ('delta.appendOnly' = 'false')")
+
+# Add a new custom property
+spark.sql("ALTER TABLE sales_data SET TBLPROPERTIES ('data.governance.level' = 'confidential')")
+
+
+
+
+//  2. Configure Column Properties (Comments) 
+The primary "property" for columns in data modeling is the comment (description). 
+
+A. Set Column Comments During Table Creation 
+Similar to table properties, you can add comments when defining the schema in a CREATE TABLE statement. 
+
+
+spark.sql("""
+CREATE TABLE IF NOT EXISTS products_catalog (
+    product_id INT COMMENT 'Unique identifier for each product',
+    name STRING COMMENT 'Name of the product',
+    price DECIMAL(10, 2) COMMENT 'Current unit price in USD'
+) USING PARQUET
+""")
+
+
+B. Modify Column Comments of an Existing Table 
+You can modify a column's comment using the ALTER TABLE ... ALTER COLUMN ... SET COMMENT command. 
+
+
+spark.sql("ALTER TABLE products_catalog ALTER COLUMN name SET COMMENT 'Official product name used in the catalog'")
+
+
+
+C. Setting Column Comments via DataFrame Metadata 
+While SQL is the standard way to set persistent column comments in the metastore, you can associate metadata, including comments, with a PySpark Column object in a DataFrame during transformations. Note this metadata might not persist to the catalog if the DataFrame is simply saved without a formal CREATE TABLE operation. 
+
+
+from pyspark.sql.types import StructType, StructField, StringType, IntegerType
+from pyspark.sql import functions as F
+
+# Define a schema with metadata (comments)
+schema = StructType([
+    StructField("id", IntegerType(), True, metadata={"comment": "User ID"}),
+    StructField("name", StringType(), True, metadata={"comment": "User's full name"})
+])
+
+# Create a DataFrame using the schema
+data = [(1, "Alice"), (2, "Bob")]
+df = spark.createDataFrame(data, schema)
+
+# View the metadata
+print(df.schema['id'].metadata['comment'])
+
+# Example of using alias to set comment on a new column
+df_with_comment = df.select(
+    F.col("name").alias("user_name", metadata={'comment': 'Renamed name column'})
+)
+
+print(df_with_comment.schema['user_name'].metadata['comment'])
+
+
+
+
+ // 3. Verification Examples
+You can verify the configured properties and comments using DESCRIBE EXTENDED or DESCRIBE FORMATTED SQL commands. 
+
+View Table Properties:
+
+spark.sql("DESCRIBE EXTENDED sales_data").show(truncate=False)
+
+
+View Column Comments:
+
+spark.sql("DESCRIBE sales_data").show()
+
+
+
+
