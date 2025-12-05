@@ -1,0 +1,42 @@
+DAX (Data Analysis Expressions) is a formula language used in Power BI to create calculated columns, measures, and calculated tables within a data model. Here are examples of DAX code for creating various model calculations:
+
+Examples:
+
+// 1. Creating a Measure (Aggregated Value):
+Code
+
+Total Sales = SUM(Sales[SalesAmount])
+This measure calculates the sum of the SalesAmount column from the Sales table, providing the total sales figure.
+
+// 2. Creating a Calculated Column (Row-Level Calculation):
+Code
+
+Full Name = 'Customers'[FirstName] & " " & 'Customers'[LastName]
+This calculated column in the Customers table concatenates the FirstName and LastName columns with a space in between, creating a new Full Name column for each customer.
+
+
+// 3. Creating a Measure with Time Intelligence (Year-to-Date Sales):
+Code
+
+YTD Sales = CALCULATE(SUM(Sales[SalesAmount]), DATESYTD('Calendar'[Date]))
+This measure calculates the Year-to-Date (YTD) sales by summing the SalesAmount and applying a filter using the DATESYTD function on the Date column of the Calendar table.
+
+
+// 4. Creating a Measure with Filtering (Sales for a Specific Product Category):
+Code
+
+Electronics Sales = CALCULATE(SUM(Sales[SalesAmount]), 'Products'[Category] = "Electronics")
+This measure calculates the total sales specifically for products within the "Electronics" category by applying a filter on the Category column of the Products table.
+
+// 5. Creating a Calculated Table (Summarized Data):
+Code
+
+Sales by Region = SUMMARIZE(
+    Sales,
+    Geography[Region],
+    "Total Sales", SUM(Sales[SalesAmount]),
+    "Average Order Value", AVERAGE(Sales[OrderQuantity])
+)
+
+
+

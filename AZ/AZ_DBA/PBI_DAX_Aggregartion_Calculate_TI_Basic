@@ -1,0 +1,104 @@
+In Power BI, model calculations using DAX are fundamental for creating dynamic and insightful reports. Here are examples illustrating single aggregation measures, the CALCULATE function, time intelligence measures, and basic statistical functions:
+
+// 1. Create Single Aggregation Measures:
+These measures summarize data from a column using a single aggregation function.
+Code
+
+Total Sales = SUM(FactSales[SalesAmount])
+Average Price = AVERAGE(FactSales[UnitPrice])
+Number of Orders = COUNT(FactSales[OrderID])
+
+
+// 2. Use the CALCULATE Function:
+CALCULATE is a powerful function that modifies the filter context of an expression.
+Code
+
+Sales in California = CALCULATE(SUM(FactSales[SalesAmount]), DimGeography[StateProvince] = "California")
+Online Sales = CALCULATE(SUM(FactSales[SalesAmount]), DimSalesChannel[Channel] = "Online")
+Sales Last Year = CALCULATE(SUM(FactSales[SalesAmount]), SAMEPERIODLASTYEAR('Calendar'[Date]))
+
+
+// 3. Implement Time Intelligence Measures:
+Time intelligence functions allow for calculations across different time periods.
+Code
+
+Total Sales YTD = TOTALYTD(SUM(FactSales[SalesAmount]), 'Calendar'[Date])
+Monthly Sales Growth = 
+    VAR CurrentMonthSales = SUM(FactSales[SalesAmount])
+    VAR PreviousMonthSales = CALCULATE(SUM(FactSales[SalesAmount]), PREVIOUSMONTH('Calendar'[Date]))
+    RETURN DIVIDE(CurrentMonthSales - PreviousMonthSales, PreviousMonthSales)
+
+
+
+// 4. Use Basic Statistical Functions:
+DAX includes various statistical functions for analyzing data distributions.
+Code
+
+Max Sales Amount = MAX(FactSales[SalesAmount])
+Min Sales Amount = MIN(FactSales[SalesAmount])
+Average Quantity = AVERAGEX(FactSales, FactSales[OrderQuantity]) // AVERAGEX iterates row by row
+Standard Deviation of Sales = STDEV.S(FactSales[SalesAmount])
+
+
+
+
+// 5. Create Semi-Additive Measures:
+Semi-additive measures aggregate across some dimensions but not others, typically time. For instance, an inventory balance should not be summed across months but rather show the balance at the end of each month.
+
+Inventory Balance (End of Period) = 
+CALCULATE(
+    SUM(Inventory[Balance]),
+    LASTDATE('Date'[Date])
+)
+
+This measure calculates the inventory balance for the last date available within the current filter context, effectively making it semi-additive across the time dimension.
+
+
+
+// 6. Create a Measure by Using Quick Measures:
+ 
+Quick measures provide pre-built templates for common calculations without writing DAX manually.
+
+  Steps:
+  - Right-click on a table or column in the Fields pane.
+  - Select New quick measure.
+  - Choose a calculation type (e.g., "Average per category," "Year-over-year change").
+  - Select the relevant fields and configure the options.
+  - Click OK.
+
+Power BI automatically generates the DAX for the measure.
+
+
+
+// 7. Create Calculated Tables or Columns:
+Calculated Column Example: Adding a "Full Name" column by combining "First Name" and "Last Name".
+Code
+
+    Full Name = [First Name] & " " & [Last Name]
+Calculated Table Example: Creating a table of "High Value Customers" based on a condition.
+Code
+
+    High Value Customers = 
+    FILTER(
+        Customers,
+        Customers[Total Sales] > 10000
+    )
+
+
+
+// 8. Create Calculation Groups:
+
+Calculation groups reduce redundant measures by applying common calculation logic to multiple existing measures. 
+
+Steps:
+- Switch to Model view.
+- Select Calculation group from the ribbon.
+- Define calculation items within the group, each with a DAX expression using SELECTEDMEASURE() to refer to the underlying measure.
+
+Example Calculation Group "Time Intelligence":
+
+  Calculation Item "Current Period": SELECTEDMEASURE()
+  Calculation Item "Previous Period": CALCULATE(SELECTEDMEASURE(), PREVIOUSMONTH('Date'[Date]))
+  Calculation Item "YTD": CALCULATE(SELECTEDMEASURE(), DATESYTD('Date'[Date]))
+
+This allows you to apply "Previous Period" or "YTD" logic to any measure (e.g., "Total Sales," "Profit") by simply dragging the "Time Intelligence" calculation group into a visual.
