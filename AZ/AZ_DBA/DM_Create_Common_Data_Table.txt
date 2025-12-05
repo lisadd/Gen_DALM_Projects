@@ -1,0 +1,59 @@
+# Creating a common date table in PySpark using SQL examples involves generating a sequence of dates and then extracting various date-related attributes
+
+
+    from pyspark.sql import SparkSession
+    from pyspark.sql import functions as F
+
+    spark = SparkSession.builder \
+        .appName("DateDimensionTable") \
+        .getOrCreate()
+
+
+
+# Define Start and End Dates:
+
+    start_date = '2000-01-01'
+    end_date = '2050-12-31'
+
+
+
+# Generate a Sequence of Dates.
+# Use the sequence function to create an array of dates and then explode it into individual rows.
+
+
+    date_df = spark.sql(f"""
+        SELECT explode(sequence(to_date('{start_date}'), to_date('{end_date}'), interval 1 day)) AS calendar_date
+    """)
+    date_df.createOrReplaceTempView("raw_dates")
+
+
+
+# Extract Date Attributes using SQL.
+# Create a new DataFrame or temporary view by selecting the calendar_date and extracting various attributes like year, month, day, day of week, week of year, etc., using built-in SQL functions.
+
+
+    CREATE OR REPLACE TEMPORARY VIEW dim_date_temp AS
+    SELECT
+        calendar_date,
+        YEAR(calendar_date) AS year,
+        MONTH(calendar_date) AS month,
+        DAY(calendar_date) AS day,
+        QUARTER(calendar_date) AS quarter,
+        WEEKOFYEAR(calendar_date) AS week_of_year,
+        DAYOFWEEK(calendar_date) AS day_of_week, -- 1 for Sunday, 7 for Saturday
+        DATE_FORMAT(calendar_date, 'EEEE') AS day_name, -- Full day name (e.g., Monday)
+        DATE_FORMAT(calendar_date, 'MMMM') AS month_name, -- Full month name (e.g., January)
+        DATE_FORMAT(calendar_date, 'yyyyMMdd') AS date_key, -- YYYYMMDD format for integer key
+        CASE
+            WHEN DAYOFWEEK(calendar_date) IN (1, 7) THEN TRUE
+            ELSE FALSE
+        END AS is_weekend
+    FROM raw_dates;
+
+
+
+# View the Date Table:
+
+    spark.sql("SELECT * FROM dim_date_temp LIMIT 10").show()
+
+

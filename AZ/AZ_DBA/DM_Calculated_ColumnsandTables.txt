@@ -1,0 +1,86 @@
+In PySpark SQL, calculated columns are used for row-level transformations and immediate feature engineering, while calculated tables (often implemented via temporary views or new persisted tables) are used for storing intermediate results, data modeling, or specific analysis scenarios like creating a date table.
+
+
+Use Cases for Calculated Columns
+Calculated columns derive new data based on existing columns within the same row of a DataFrame/table. 
+
+	# Simple arithmetic operations:
+		- Example: Calculating total_price from quantity and price (e.g., quantity * price).
+		- Notebook Code (PySpark DataFrame API, equivalent in SQL SELECT): 
+
+	df = df.withColumn("total_price", df["quantity"] * df["price"])
+
+
+	# Data transformations and unit conversions:
+
+		- Example: Converting a weight column from pounds to kilograms, or calculating population density.
+		- Notebook Code:
+
+	from pyspark.sql import functions as F
+	df = df.withColumn("population_density", F.col("population") / F.col("area"))
+
+
+	# Conditional logic and categorization:
+
+		- Example: Creating a new column that labels an order as "High Value" or "Normal Value" based on the total_price.
+		- Notebook Code:
+
+	df = df.withColumn("value_category", F.when(df["total_price"] > 100, "High Value").otherwise("Normal Value"))
+
+
+	# Extracting parts of dates/strings:
+
+		- Example: Extracting the month number or name from a full timestamp or date column.
+		- Notebook Code:
+
+	df = df.withColumn("month_name", F.month(df["order_date"]))
+
+
+
+
+/// Use Cases for Calculated Tables
+Calculated tables are the result of a query (potentially involving aggregations or joins across multiple tables) that is then persisted as a new, separate table or temporary view in the Spark session. 
+
+	# Creating a static dimension table (e.g., Date/Calendar table):
+	
+		- Example: Generating a comprehensive date dimension table that doesn't exist in the raw data, for use in filtering and analysis across the entire data model.
+		- Notebook Code (using a view):
+
+	# Assuming 'df_dates' is a DataFrame generated with date logic
+	df_dates.createOrReplaceTempView("date_dimension")
+	# Now 'date_dimension' can be queried via Spark SQL
+	spark.sql("SELECT * FROM date_dimension WHERE ...")
+
+
+	# Storing intermediate or aggregated results:
+
+		- Example: Pre-calculating complex aggregations like "total sales per region per month" to improve performance for downstream reports (materialized view concept).
+		- Notebook Code:
+
+	# Aggregate data
+	agg_df = df.groupBy("region", "month").sum("total_price").withColumnRenamed("sum(total_price)", "monthly_sales")
+	# Save as a new table for persistent use
+	agg_df.write.saveAsTable("regional_monthly_sales")
+
+
+	# Data modeling and debugging:
+
+		- Example: Combining data from multiple tables (e.g., joining Orders and Customers tables) into a single, denormalized table for a specific reporting need or to debug complex logic.
+		- Notebook Code:
+
+	# Register DataFrames as tables
+	df_orders.createOrReplaceTempView("orders")
+	df_customers.createOrReplaceTempView("customers")
+
+	# Create a new table from a join operation
+	full_orders_df = spark.sql("""
+    		SELECT o.*, c.customer_name, c.region
+    		FROM orders o
+    		JOIN customers c ON o.customer_id = c.customer_id
+""")
+		full_orders_df.write.saveAsTable("full_order_details")
+
+
+
+
+
