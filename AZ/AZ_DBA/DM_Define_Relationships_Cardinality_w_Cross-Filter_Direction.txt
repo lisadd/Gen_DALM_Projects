@@ -1,0 +1,80 @@
+Example notebook environment demonstrating how these concepts are applied in PySpark.
+
+// 1. Defining Cardinality through Joins
+Cardinality (e.g., One-to-Many, Many-to-Many) in PySpark determines how you structure your join operation. The join type you select handles the data matching logic based on the uniqueness (cardinality) of the keys in your DataFrames. 
+
+from pyspark.sql import SparkSession
+from pyspark.sql.functions import col
+
+spark = SparkSession.builder.appName("CardinalityExample").getOrCreate()
+
+# Create sample dataframes
+# Dimension table (e.g., Products) with unique IDs (One side)
+products_data = [
+    (1, "Laptop"),
+    (2, "Mouse"),
+    (3, "Keyboard")
+]
+products_df = spark.createDataFrame(products_data, ["ProductID", "ProductName"])
+
+# Fact table (e.g., Sales) with duplicate IDs (Many side)
+sales_data = [
+    (101, 1, 2),
+    (102, 1, 1),
+    (103, 2, 3),
+    (104, 3, 1),
+    (105, 1, 1),
+    (106, 2, 2)
+]
+sales_df = spark.createDataFrame(sales_data, ["OrderID", "ProductID", "Quantity"])
+
+# One-to-Many relationship (Products to Sales) is handled with a standard join
+# We use a "inner" or "left" join, filtering sales based on existing products.
+print("--- One-to-Many Join (Products to Sales) ---")
+joined_df = sales_df.join(products_df, sales_df["ProductID"] == products_df["ProductID"], "inner")
+joined_df.show()
+
+
+
+
+// 2. Controlling Cross-Filter Direction through Filtering
+Cross-filter direction is not an inherent property of a PySpark DataFrame connection. Instead, you explicitly apply filters using .filter() or .where() clauses, effectively defining the direction of data flow for analysis. 
+
+A. Unidirectional Filtering (from "One" side to "Many" side)
+This is the default and recommended behavior in a star schema, similar to single-direction filtering in Power BI. The "one" side (Products) filters the "many" side (Sales). 
+
+
+# Unidirectional filter: Filter Sales data to only show sales for "Laptop" (ProductID 1)
+
+product_filter_id = 1
+print(f"--- Unidirectional Filter: Sales for ProductID {product_filter_id} ---")
+
+# First, define the condition on the 'one' side (Products DataFrame's logic or a known value)
+# Then apply the filter to the 'many' side (Sales DataFrame)
+filtered_sales_df = sales_df.filter(sales_df["ProductID"] == product_filter_id)
+filtered_sales_df.show()
+
+
+B. Bidirectional Filtering (filtering from "Many" side to "One" side) 
+Bidirectional filtering, which allows the 'many' side to filter the 'one' side (e.g., showing only products that actually have sales), requires a different approach, often using isin or a semi-join, as PySpark doesn't automatically propagate filters back. 
+
+
+# Bidirectional filter: Show only products that appear in the Sales table
+print("--- Bidirectional Filter: Products with recorded sales ---")
+
+# Get a list of distinct ProductIDs that exist in the Sales table
+products_with_sales = sales_df.select("ProductID").distinct()
+product_ids_list = [row['ProductID'] for row in products_with_sales.collect()] # Collect to driver as list
+
+# Use the list to filter the original Products DataFrame
+filtered_products_df = products_df.filter(products_df["ProductID"].isin(product_ids_list))
+filtered_products_df.show()
+
+# Alternatively, using a join/semi-join for a pure Spark approach:
+# "left_semi" join returns rows from the left DF that have a match in the right DF
+filtered_products_join = products_df.join(sales_df.select("ProductID").distinct(), "ProductID", "left_semi")
+filtered_products_join.show()
+
+
+
+
