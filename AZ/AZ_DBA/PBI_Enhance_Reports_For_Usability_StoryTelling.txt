@@ -1,0 +1,86 @@
+Power BI's enhancements for usability and storytelling, including bookmarks, custom tooltips, interactions, navigation, sorting, sync slicers, and visual grouping/layering, are primarily configured through the Power BI Desktop user interface. While some advanced integrations or dynamic elements might involve DAX expressions or Power Query, the core setup of these features is done visually.
+
+See additionally PluralSight and/or DataCamp for hand-ons implementation
+
+Here's how to achieve these enhancements:
+
+// 1. Configure Bookmarks:
+- Navigate to the View tab in Power BI Desktop.
+- Select Bookmarks to open the Bookmarks pane.
+- Adjust your report view (filters, slicer selections, visible visuals, etc.) to the desired state.
+- Click Add in the Bookmarks pane to create a new bookmark, then rename it.
+
+// 2. Create Custom Tooltips:
+- Create a new report page dedicated to the tooltip (e.g., rename it "Tooltip Page").
+- In the Format pane for this page, under Canvas settings, set the Type to "Tooltip".
+- Design your tooltip content on this page using visuals and fields.
+- For the visual you want to use the custom tooltip, select it. In the Format pane, under Tooltip, change the Type to "Report page" and select your "Tooltip Page".
+
+// 3. Edit and Configure Interactions Between Visuals:
+- Select a visual.
+- Navigate to the Format tab and click Edit interactions.
+- Hover over other visuals on the page. Icons will appear (e.g., filter, highlight, none) allowing you to control how the selected visual interacts with others.
+
+// 4. Configure Navigation for a Report:
+- Page Navigator: On the Insert tab, click Buttons > Page navigator. This automatically creates buttons for your report pages.
+- Custom Buttons with Bookmarks: Insert a button (e.g., from Insert > Buttons). Select the button, go to the Format pane, expand Action, turn it On, set the Type to "Bookmark", and choose the desired bookmark.
+ 
+// 5. Apply Sorting to Visuals:
+- Select the visual you want to sort.
+- Click the More options (...) button in the visual's header.
+- Select Sort by and choose the desired field and sort order (ascending/descending).
+
+// 6. Configure Sync Slicers:
+- Select the slicer you want to sync.
+- Navigate to the View tab and select Sync slicers.
+- In the Sync slicers pane, check the boxes for the pages where you want the slicer selections to be synchronized.
+
+// 7. Group and Layer Visuals by Using the Selection Pane: 
+- Navigate to the View tab and select Selection to open the Selection pane.
+- Select multiple visuals by holding Ctrl and clicking them.
+- Right-click on one of the selected visuals and choose Group.
+- In the Selection pane, you can also reorder visuals to change their layering (which visual appears on top of others).
+
+
+// 8. Enhance Reports for Usability and Storytelling:
+- Bookmarks: Create snapshots of specific report states (filters, slicers, visual selections) to guide users through a narrative.
+- Buttons: Add interactive buttons with actions like navigating to bookmarks, drilling through, or clearing filters.
+- Tooltips: Customize tooltips to provide richer context and information when users hover over visuals.
+- Conditional Formatting: Highlight key data points and trends using color, icons, or data bars based on specific conditions.
+
+
+// 9. Configure Drill-through Navigation:
+- Create Drill-through Pages: Design a separate report page to show detailed information.
+- Set Drill-through Fields: On the drill-through page, specify the fields that can be used to filter the page from another report page.
+- Add Drill-through Buttons (Optional): Place a button on the source page that navigates to the drill-through page, passing the selected context.
+
+
+// 10. Configure Export Settings:
+- Power BI Service: Navigate to File > Export for a report. Options include exporting to PDF, PowerPoint, or analyzing in Excel.
+- Admin Portal (for broader settings): Power BI administrators can configure tenant-wide export settings, including disabling certain export formats.
+
+
+// 11. Design Reports for Mobile Devices:
+- Mobile Layout View: In Power BI Desktop, go to View > Mobile Layout.
+- Arrange Visuals: Drag and drop visuals from the desktop layout onto the mobile canvas and arrange them for optimal mobile viewing.
+- Customize Formatting: Adjust visual sizes, fonts, and other formatting specifically for the mobile layout without affecting the desktop version.
+
+
+// 12. Enable Personalized Visuals in a Report:
+- Power BI Desktop: Go to File > Options and settings > Options > Current file > Report settings and enable "Personalize visuals."
+- Power BI Service: In the report settings, turn on "Personalize visuals."
+- User Interaction: Users can then right-click on visuals in the Power BI Service to change visual types, add/remove fields, or apply filters. 
+
+
+// 13. Design and Configure Power BI Reports for Accessibility:
+- Tab Order: Set a logical tab order for visuals to ensure keyboard navigation is intuitive. Go to View > Selection pane > Tab order.
+- Alt Text: Add descriptive alt text to images and visuals for screen reader users.
+- High Contrast Colors: Use color palettes with sufficient contrast for readability.
+- Clear and Concise Language: Use straightforward language in titles, labels, and tooltips.
+
+// 14. Configure Automatic Page Refresh:
+- Page Refresh Settings: In Power BI Desktop, with the report page selected, go to the Format pane > Page information and enable "Automatic page refresh."
+- Set Refresh Interval: Define the refresh frequency based on your data source and desired update rate.
+- Limitations: This feature requires a DirectQuery or Live Connection to the data source and is subject to capacity limitations in the Power BI Service.
+
+

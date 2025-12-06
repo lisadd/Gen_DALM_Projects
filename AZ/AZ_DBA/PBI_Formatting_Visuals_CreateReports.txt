@@ -1,0 +1,74 @@
+Power BI reports are created interactively within Power BI Desktop or the Power BI service, primarily through drag-and-drop actions and menu selections rather than explicit code. However, DAX (Data Analysis Expressions) is a code-based language used for creating measures and calculated columns, which are crucial for advanced reporting.
+
+
+See Additionally PluralSight and/or DataCamp for Hands-On Practice 
+
+Here are examples and explanations for the requested actions:
+
+
+// 1. Create Reports:
+Reports are created by importing data, then dragging fields from the Fields pane onto the report canvas and selecting visuals from the Visualizations pane. No explicit code is typically written for this initial setup.
+
+
+// 2. Select an Appropriate Visual:
+This is a manual selection in the Visualizations pane. For example, to create a bar chart:
+- Drag a categorical field (e.g., 'Product Category') to the X-axis.
+- Drag a numerical field (e.g., 'Sales') to the Y-axis.
+- Select the 'Clustered column chart' icon in the Visualizations pane.
+
+
+// 3. Format and Configure Visuals:
+This is done in the Format pane of the Visualizations pane. For example, to change the title of a visual: Select the visual, Go to the Format pane (paint roller icon), and Expand 'Title' and change the 'Text'.
+
+
+
+// 4. Apply and Customize a Theme:
+Themes are applied through the 'View' tab in Power BI Desktop.
+Go to the 'View' tab.
+Select a theme from the 'Themes' dropdown or customize one. Customization involves changing colors, fonts, and visual properties.
+
+
+
+// 5. Apply Conditional Formatting:
+Conditional formatting is set on individual fields within a visual.
+Select the visual.
+In the Fields pane, right-click on the field you want to format (e.g., 'Sales'). 
+Select 'Conditional formatting' and choose the desired option (e.g., 'Background color scales', 'Rules', 'Icons').
+Configure the rules or color scales in the dialog box.
+
+
+
+// 6. Apply Slicing and Filtering:
+Slicers are visuals added to the report page, while filters are applied at the visual, page, or report level.
+	- Slicer: Drag a field (e.g., 'Year') to the report canvas and select the 'Slicer' visual. Configure its settings in the Format pane.
+	- Filter: In the Filters pane, drag a field to the 'Filters on this visual', 'Filters on this page', or 'Filters on all pages' section and set the desired filter conditions.
+
+
+
+// 7. Configure the Report Page:
+Page settings are adjusted in the Format pane when no visual is selected.
+Click on an empty area of the report canvas.
+In the Format pane, expand 'Page information', 'Page background', etc., to configure settings like page size, background color, and wallpaper.
+
+
+// 8. Choose When to Use a Paginated Report:
+Paginated reports (created in Power BI Report Builder) are best for highly formatted, pixel-perfect reports designed for printing or generating PDFs, often used for operational reports like invoices or statements. They are not created with DAX but with Report Definition Language (RDL).
+
+
+// 9. Create Visual Calculations by Using DAX:
+DAX is used to create measures and calculated columns.
+
+
+- Example: Creating a Measure for Total Sales
+Total Sales = SUM(Sales[SalesAmount])
+
+
+- Example: Creating a Calculated Column for Profit Margin
+Profit Margin = DIVIDE(Sales[Profit], Sales[SalesAmount]) 
+
+- Example: Creating a Measure with Conditional Logic (Visual Calculation)
+Sales Performance =
+VAR CurrentMonthSales = SUM(Sales[SalesAmount])
+VAR PreviousMonthSales = CALCULATE(SUM(Sales[SalesAmount]), PREVIOUSMONTH(Dates[Date]))
+RETURN
+IF(CurrentMonthSales > PreviousMonthSales, "Up", "Down")
