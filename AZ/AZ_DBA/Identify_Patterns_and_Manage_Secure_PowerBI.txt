@@ -1,0 +1,83 @@
+Power BI Service:
+
+
+
+
+// Identify Patterns and Trends
+- Visual Inspection: Use line charts to visualize data over time to see overall trends and specific fluctuations.
+- Analytics Pane Trend Lines:
+	1.Select a line, area, column, or scatter chart.
+	2. In the Visualizations pane, select the Analytics pane (magnifying glass icon).
+	3. Expand the Trend line section and select + Add line. Power BI automatically calculates and displays the statistical trend.
+- Quick Insights: Right-click on a data point or an entire visual and select Analyze > Explain the increase/decrease to have Power BI automatically find and present insights and potential causes as a new visual. 
+
+
+// Use the Analyze Feature in Power BI
+- Explain Fluctuations:
+	1.Right-click on a data point (e.g., a bar or line) in a visual.
+	2.Select Analyze.
+	3.Choose an option, such as Explain the increase, Explain the decrease, or Explain the difference.
+	4.Power BI will run machine learning algorithms and display a window with a visual (like a waterfall chart) and a description detailing which categories most influenced the change. 
+
+
+// Use Grouping, Binning, and Clustering
+- Grouping (Manual):
+	1.In a visual, select two or more data points (e.g., bars) using Ctrl+Select.
+	2.Right-click one of the selected points and choose Group.
+	3.A new group field will appear in the Fields list, which you can use in your visual to analyze the combined group.
+- Binning (Defining value ranges):
+	1.Right-click a numeric field in the Fields list.
+	2.Select New group.
+	3.In the dialog box, set the Bin size to place values into equally sized groups.
+- Clustering (Automated ML):
+	1.Create a scatter chart with the desired fields on the X and Y axes.
+	2.Select the visual, then from the "More Options" menu (ellipsis), choose Automatically Find Clusters.
+	3.Power BI applies machine learning to identify and group data points into a new "Clusters" field in the Fields list. You can adjust the number of clusters in the pane that appears. 
+
+
+// Use AI Visuals
+- Key Influencers: This visual helps understand the driving factors behind a key metric.
+	1.Add the Key influencers visual to your report.
+	2.Drag the metric you want to analyze into the Analyze field.
+	3.Drag potential explanatory fields (dimensions) into the Explain by field.
+- Decomposition Tree: This visual allows you to break down a metric across different dimensions to identify high and low contributors.
+	1. Add the Decomposition tree visual.
+	2. Add the main value you want to analyze to the Analyze field.
+	3. Add the dimensions you want to use for explanation to the Explain by field. 
+
+
+// Use Reference Lines, Error Bars, and Forecasting
+- Reference Lines: Add constant lines, min/max lines, average lines, etc., from the Analytics pane in Power BI Desktop or Service.
+- Error Bars:
+	1. Select a line chart.
+	2. In the Analytics pane, expand Error bars and turn them on.
+	3. Add fields to the Upper bound and Lower bound fields to specify the range of uncertainty.
+
+- Forecasting:
+	1. Select a line chart with time series data (a date/time field on the X-axis).
+	2. In the Analytics pane, expand Forecasting and turn it on.
+	3. Adjust parameters such as Forecast length, Confidence interval, and seasonality to generate future predictions. 
+
+Detect Outliers & Anomalies
+- Anomaly Detection (Line Charts):
+	1. Select a line chart that displays time series data.
+	2. In the Analytics pane, expand Anomaly detection and select Add anomaly.
+	3. Power BI automatically detects anomalies and provides explanations (root cause analysis).
+- DAX Measures (Advanced): For more customized outlier detection (e.g., using IQR or Z-score methods), you can create specific DAX measures and use conditional formatting to highlight outliers in tables or visuals. 
+
+
+// Manage and Secure Power BI (with Azure focus)
+- Workspace Management:
+	- Create and manage workspaces in the Power BI service to organize reports, dashboards, and semantic models, often aligning with Azure AD groups.
+
+
+- Row-Level Security (RLS):
+	- Define roles and rules within Power BI Desktop using DAX expressions to filter which data rows a user can see.
+	- Manage these roles in the Power BI service and assign Azure Active Directory (Azure AD) users or groups to the defined roles.
+
+
+- Azure Integration:
+	- Use Azure services like Azure SQL Database or Azure Synapse Analytics as data sources for Power BI.
+	- Leverage Azure AD for authentication and authorization.
+	- Utilize Power BI Premium capacity, which uses Azure for computational resources and storage, for enhanced performance and enterprise features.
+	- Implement Azure Private Link for secure data connectivity to Power BI (enterprise setup). 
