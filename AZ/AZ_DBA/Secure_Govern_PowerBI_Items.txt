@@ -1,0 +1,39 @@
+Securing Power BI involves using Workspace Roles (Admin, Member, Contributor, Viewer), Item-Level Security (OLS) via Tabular Editor for table/column protection, Row-Level Security (RLS) with DAX in Power BI Desktop (e.g., USERPRINCIPALNAME()), assigning users to roles in the Power BI Service, and applying Sensitivity Labels via Microsoft Purview for data classification, all managed through Power BI's Admin Portal, Fabric settings, and Azure AD.
+
+
+1. Workspace Roles (RBAC)
+- Concept: Assigns high-level permissions (Admin, Member, Contributor, Viewer) to users/groups for the entire workspace.
+- Code/Action: In Power BI Service/Fabric: Go to Workspace -> Access -> Add users/groups and assign a role. 
+
+
+
+2. Item-Level Security (OLS)
+- Concept: Restricts access to specific tables or columns within a semantic model.
+- Code/Action (Tabular Editor):
+  1. Open Tabular Editor (external tool) connected to your model.
+  2. Right-click Tables > Create New Role.
+  3. In Role Properties (Security tab), add DAX expression (e.g., [TableName].[ColumnName] = 0 or false to deny).
+  4. Assign users to this role in the Service. 
+
+
+3. Row-Level Security (RLS)
+- Concept: Filters rows of data based on the user viewing the report.
+- Code/Action (Power BI Desktop - Modeling Tab > Manage Roles):
+  1. Create Role (e.g., "Sales Manager").
+  2. Select Table, click "Add Filter", use DAX: [Region] = "West" (for a static filter) or [UserEmail] = USERPRINCIPALNAME() (for dynamic).
+  3. Assign users to this role in the Power BI Service (Manage > Row-level security). 
+
+
+4. Access to Semantic Models (Data Access)
+- Concept: Controls who can use/connect to models (Build permission).
+- Code/Action (Power BI Service/Fabric):
+  1. Go to the Semantic Model > Manage permissions.
+  2. Grant Build permission to users/groups, allowing them to connect and use it in their reports.
+
+
+5. Sensitivity Labels
+- Concept: Classifies and protects data (e.g., Confidential, Public) across the Microsoft ecosystem.
+- Code/Action (Microsoft Purview/Power BI):
+  1. Admin defines labels in Purview.
+  2. Apply labels to datasets/reports in Power BI Service (Information Protection pane).
+  3. Users see labels, enforcing protection (e.g., encryption, restricted sharing) based on label policies. 
