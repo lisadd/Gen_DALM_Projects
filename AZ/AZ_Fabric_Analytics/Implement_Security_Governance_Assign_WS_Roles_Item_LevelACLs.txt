@@ -1,0 +1,48 @@
+// MANAGING WORKSPACE ROLES:
+
+
+To manage Workspace Roles (Admin, Member, Contributor, Viewer) in Microsoft Fabric, navigate to your workspace, click Manage access, enter users/groups, choose a role (Admin, Member, Contributor, Viewer), and add them; these granular roles control permissions for building, sharing, and consuming content, with Admins having full control and Viewers only consuming data. 
+
+Steps to Assign Workspace Roles (Fabric UI)
+
+1. Navigate to Workspace: Sign in to the Microsoft Fabric portal and go to the desired workspace.
+2. Open Access Management: In the workspace's command bar, select Manage access (or the settings gear icon for deeper settings).
+3. Add Users/Groups: Use the Add people or groups option to find users, security groups, or service principals.
+4. Select Role: From the dropdown menu, choose one of the following roles:
+  - Admin: Full control (manage workspace, users, delete).
+  - Member: Build, share, manage content; can grant access to others.
+  - Contributor: Build, publish, manage content; cannot grant access to others.
+  - Viewer: View and consume content only (read data, view dashboards).
+5. Confirm: Click Add to finalize the role assignment. 
+
+Key Role Differences:
+  - Admin: Full control, can delete the workspace.
+  - Member: Can manage content and grant access to others.
+  - Contributor: Can build and publish, but not manage users.
+  - Viewer: Can only view content and data, like reading T-SQL from SQL endpoints.
+
+
+
+
+// ITEM LEVEL ACCESS CONTROLS:
+
+Item-level access controls are managed primarily through the Microsoft Fabric UI by sharing individual items or managing their specific permissions. Management via the Azure portal is generally for underlying Azure resources, not individual Fabric items within a workspace. 
+
+Step-by-Step Instructions (Fabric UI)
+
+1. Navigate to the workspace containing the item you want to manage.
+2. Locate the specific item (e.g., Lakehouse, Warehouse, Report).
+3. Select the "More options" menu (ellipsis ...) next to the item name.
+4. Select "Manage permissions" or "Share" from the menu options.
+5. Go to the "Direct access" tab if using "Manage permissions".
+6. Select "Add user" or enter the name/email address in the "Grant people access" screen.
+7. Choose the desired permissions for the user or group (e.g., Read, Write, Share, ReadData, etc.). The available permissions vary by item type.
+8. (Optional) Select "Notify recipients by email".
+9. Select "Grant" (or "Add" / "Send") to apply the permissions. 
+
+
+// Managing Existing Permissions
+
+ - To modify or remove existing permissions, go to the "Manage permissions" page for the item.
+ - Select the "More options" menu next to the specific user or group and choose to modify or remove their access.
+ - Note that permissions inherited from a workspace role cannot be modified or removed here; they must be changed at the workspace level.  

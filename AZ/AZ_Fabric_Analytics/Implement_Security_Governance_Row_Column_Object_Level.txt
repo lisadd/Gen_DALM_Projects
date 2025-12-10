@@ -1,0 +1,144 @@
+// Example:  Row-Level, Column-Level, and Object-Level Access Controls (SQL/DAX):
+
+Reference: Row Level Security -  https://learn.microsoft.com/en-us/fabric/data-warehouse/tutorial-row-level-security
+Reference: Column Level Security - https://learn.microsoft.com/en-us/fabric/data-warehouse/tutorial-column-level-security
+
+
+A. Row-Level Security (RLS) in SQL Analytics Endpoint/Warehouse:
+
+
+    CREATE FUNCTION Security.fn_securitypredicate(@SalesTerritory AS nvarchar(50))
+        RETURNS TABLE
+        WITH SCHEMABINDING
+    AS
+        RETURN SELECT 1 AS fn_securitypredicate_result
+        WHERE @SalesTerritory = USER_NAME() OR USER_NAME() = 'Admin';
+    GO
+
+    CREATE SECURITY POLICY SalesFilter
+    ADD FILTER PREDICATE Security.fn_securitypredicate(SalesTerritory) ON dbo.FactSales
+    WITH (STATE = ON);
+    GO
+
+
+
+
+// B. Column-Level Security (CLS) in SQL Analytics Endpoint/Warehouse:
+
+
+    GRANT SELECT ON YourSchema.YourTable (Column1, Column2, Column3) TO [SomeGroup];
+
+
+
+// C. Object-Level Security (OLS) in Power BI semantic models is used to restrict access to entire tables or specific columns for certain roles. Unlike Row-Level Security (RLS) which uses DAX filters, OLS hides the metadata of the secured objects, making them effectively non-existent for users assigned to the restricted role.
+While OLS is defined within model roles, it is not configured directly with DAX code within Power BI Desktop's "Manage Roles" interface. Instead, external tools like Tabular Editor or the TMDL view in Power BI Desktop are used to set the OLS properties. DAX is not used for defining OLS itself, but rather for RLS within roles.
+Here is a conceptual representation of how OLS is configured using Tabular Model Scripting Language (TMSL), which is the underlying language used by tools like Tabular
+
+
+{
+  "roles": [
+    {
+      "name": "RestrictedRole",
+      "modelPermission": "read",
+      "tablePermissions": [
+        {
+          "name": "Sales",
+          "columnPermissions": [
+            {
+              "name": "SalesAmount",
+              "metadataPermission": "none" 
+            }
+          ]
+        },
+        {
+          "name": "ConfidentialTable",
+          "metadataPermission": "none" 
+        }
+      ]
+    }
+  ]
+}
+
+
+
+// 2C. To implement OLS in Power BI:
+- Create a role in Power BI Desktop: Go to the Modeling tab > Manage Roles and create a new role (e.g., "RestrictedRole"). Do not add any DAX filter expressions here for OLS.
+
+- Use an external tool (e.g., Tabular Editor or TMDL View):
+	- Open your Power BI model in Tabular Editor (External Tools tab). 
+	- Navigate to the created role ("RestrictedRole").
+	- Expand the "Table Permissions" for that role.
+	- For the desired table or column, set the "Object Level Security" property to "None" to hide it, or "Read" to allow access.
+
+- Save changes and publish: Save the changes in Tabular Editor and then publish your Power BI report to the Power BI Service.
+- Assign users to roles: In the Power BI Service, navigate to the dataset's Security settings and assign users or groups to the "RestrictedRole." 
+
+
+
+// 3. DYNAMIC DATA MASKING --> Reference:  https://learn.microsoft.com/en-us/fabric/data-warehouse/howto-dynamic-data-masking
+
+Implementing Item-Level Access Controls with Dynamic Data Masking in Azure SQL Database (Azure Portal)
+1. Navigate to Dynamic Data Masking:
+- Log in to the Azure portal.
+- Go to your Azure SQL Database resource.
+- In the left-hand menu, under the "Security" section, select "Dynamic Data Masking."
+
+2. Add a Masking Rule:
+- On the Dynamic Data Masking configuration page, select "Add Mask."
+- In the "Add Masking Rule" pane, choose the "Schema," "Table," and "Column" you want to mask.
+- Select the desired "Masking Function" from the dropdown list (e.g., Default, Email, Partial, Random Number).
+- Configure the function's parameters if required (e.g., prefix and suffix for partial masking).
+- Select "Add" to save the masking rule. 
+
+
+3. Configure Excluded Users:
+- In the "Excluded users" field on the main Dynamic Data Masking page, enter the SQL authenticated users or Microsoft Entra identities (separated by semicolons) who should have access to the unmasked data.
+- Users with administrator privileges always have access to the original unmasked data. 
+- Select "Save" to apply the masking policy.
+
+4. Test the Masking:
+- Query the masked column as a non-excluded user to verify that the data is masked according to the defined rule.
+- Query the masked column as an excluded user or administrator to verify that the original, unmasked data is accessible.
+
+
+
+Implementing Dynamic Data Masking with T-SQL (SQL Snippet)
+1. Create a Table with Masked Columns (Example):
+
+
+CREATE TABLE Employees (
+    EmployeeID INT PRIMARY KEY,
+    FirstName VARCHAR(50),
+    LastName VARCHAR(50),
+    Email VARCHAR(100) MASKED WITH (FUNCTION = 'email()'),
+    PhoneNumber VARCHAR(20) MASKED WITH (FUNCTION = 'partial(0,"XXXX",4)')
+);
+
+
+
+2. Add Masking to an Existing Column:
+
+ALTER TABLE Customers
+ALTER COLUMN CreditCardNumber ADD MASKED WITH (FUNCTION = 'default()');
+
+
+
+3. Grant/Revoke UNMASK Permission:
+
+
+-- Grant UNMASK permission to a user or role
+GRANT UNMASK TO [YourUserOrRole];
+
+-- Revoke UNMASK permission from a user or role
+REVOKE UNMASK FROM [YourUserOrRole];
+
+
+
+4. Remove Masking from a Column:
+
+
+ALTER TABLE Employees
+ALTER COLUMN Email DROP MASKED;
+
+
+
