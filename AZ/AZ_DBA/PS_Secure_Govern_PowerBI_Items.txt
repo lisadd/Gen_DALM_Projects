@@ -1,0 +1,112 @@
+Securing and governing Power BI items in Azure using PowerShell involves managing workspace roles, item-level access, semantic model access, row-level security (RLS), and sensitivity labels.
+
+
+// 1. Assign Workspace Roles:
+# Connect to Power BI Service
+Connect-PowerBIService
+
+# Assign a user to a workspace role
+Add-PowerBIWorkspaceUser -WorkspaceId "YourWorkspaceID" -UserPrincipalName "user@example.com" -AccessRight "Admin"
+
+# You can use "Member", "Contributor", or "Viewer" as AccessRight
+
+
+
+// 2. Configure Item-Level Access (Reports, Dashboards, Apps):
+# Grant access to a specific report
+Grant-PowerBIReportAccess -ReportId "YourReportID" -UserPrincipalName "user@example.com" -AccessRight "Read"
+
+# AccessRight can be "Read", "Write", "Reshare", "Build"
+
+
+
+// 3. Configure Access to Semantic Models:
+# Grant build permission to a semantic model
+Grant-PowerBIDatasetUser -DatasetId "YourDatasetID" -UserPrincipalName "user@example.com" -AccessRight "Build"
+
+# AccessRight can be "Read", "Write", "Reshare", "Build"
+
+
+
+// 4. Implement Row-Level Security (RLS) Roles:
+RLS roles are defined within Power BI Desktop using DAX expressions. PowerShell is used to manage the membership of these roles after the semantic model is published.
+
+Example: 
+
+Part 1: DAX for RLS Role Definition (Power BI Desktop) 
+You define RLS roles in the Manage Roles section under the Modeling tab in Power BI Desktop. The DAX expressions you create will filter data at the row level and should return a TRUE or FALSE value. 
+
+1. Static RLS (Filter by a fixed value) 
+This example creates a role named North America Sales that only allows users to see data where the Region column in the Sales Data table is "North America"
+
+# DAX Configuration:
+'Sales Data'[Region] = "North America"
+
+
+2. Dynamic RLS (Filter based on the logged-in user)
+This is more common for large user bases. It dynamically filters data based on the user's login, typically their User Principal Name (UPN) (e.g., user@contoso.com). 
+Prerequisite: You need a table in your model (e.g., a Users table) that maps user email addresses to the specific data points they can access (e.g., regions, departments). This table must have a relationship with your main data table(s).
+
+# DAX expression using USERPRINCIPALNAME(): 
+-- This expression in a role applied to the 'Users' table
+'Users'[UserEmail] = USERPRINCIPALNAME()
+
+
+More advanced dynamic RLS using LOOKUPVALUE():
+This approach is useful when the filtering column is not directly in the Users table but related through another table (e.g., filtering Sales table by Region which is looked up via the Users table). 
+
+#DAX Configuration:
+-- This expression is applied as a filter on your main data table, e.g., 'Sales Data'
+'Sales Data'[Region] = LOOKUPVALUE(
+    'Users'[Region],
+    'Users'[UserEmail], USERPRINCIPALNAME()
+)
+
+
+Part 2: PowerShell for RLS Membership Management (Power BI Service)
+
+After publishing your report to the Power BI Service, you manage who belongs to which role. While typically done manually in the service UI under the dataset's Security section, for automation, you can use PowerShell to manage Microsoft Entra ID security groups which are then assigned to RLS roles. 
+
+There are currently no direct, built-in PowerShell cmdlets to assign individual users to RLS roles in the Power BI Service. The common programmatic approach is to manage membership of Azure AD Security Groups using PowerShell, and then assign those groups to the RLS roles in the Power BI Service security settings. 
+Example PowerShell (for managing Azure AD Group membership)
+
+You need the AzureAD PowerShell module installed. This script adds a user to an existing security group. The security group is already mapped to an RLS role in the Power BI Service
+
+# Requires the AzureAD module: Install-Module -Name AzureAD
+Import-Module AzureAD
+
+# Connect to Azure AD
+Connect-AzureAD
+
+# Define the user and group details
+$userPrincipalName = "user@contoso.com"
+$securityGroupId = "YOUR_SECURITY_GROUP_OBJECT_ID"
+
+# Get the user object
+$user = Get-AzureADUser -ObjectId $userPrincipalName
+
+if ($user) {
+    # Add the user to the security group
+    Add-AzureADGroupMember -ObjectId $securityGroupId -RefObjectId $user.ObjectId
+    Write-Host "Added $userPrincipalName to group $securityGroupId"
+} else {
+    Write-Host "User not found."
+}
+
+
+
+
+// 5. Configure Row-Level Security Group Membership:
+
+# Add a user to an RLS role within a semantic model
+Add-PowerBIRowLevelSecurityRoleMember -DatasetId "YourDatasetID" -RoleName "YourRLSRoleName" -UserPrincipalName "user@example.com"
+
+
+// 6. Apply Sensitivity Labels:
+
+# Set a sensitivity label on a Power BI item (e.g., a report)
+Set-PowerBILabel -ReportId "YourReportID" -LabelId "YourSensitivityLabelID"
+
+
+
+
