@@ -1,0 +1,89 @@
+REFERENCE: https://learn.microsoft.com/en-us/fabric/governance/impact-analysis
+
+To perform impact analysis in Azure Fabric, you use the built-in Lineage View and Impact Analysis panel within workspaces and on specific assets (like Semantic Models, Lakehouses) to visually trace data flow and identify downstream consumers (reports, dashboards, other models) before changes, ensuring you can notify affected users and prevent breakage by selecting the item, opening its lineage, and exploring connections across workspaces using the analysis panel. 
+
+Here's a step-by-step guide:
+
+// 1. Access Lineage View:
+- Navigate to your Fabric workspace (e.g., for a Lakehouse, Data Warehouse, or Semantic Model).
+- Locate the desired item (Lakehouse, Dataflow, Semantic Model) in the item list.
+- Click the "Lineage" icon or button associated with that item or navigate to the "Lineage" section in the workspace. 
+
+// 2. Understand the Lineage Graph:
+- You'll see a visual graph showing upstream (sources) and downstream (consumers) connections.
+- Items are represented by cards (e.g., Lakehouse tables, Semantic Models, Reports). 
+
+
+// 3. Perform Impact Analysis on a Specific Item:
+- For Semantic Models: Select the Semantic Model card in the lineage view, then click the Impact Analysis button in the side panel (or select the icon on the card).
+- For Lakehouses/Data Warehouses: Select the relevant table or the Lakehouse/Warehouse itself, and use the impact analysis feature to see what consumes it.
+For Dataflows: Select the dataflow, and the lineage view will show what feeds into it and what uses its output. 
+
+// 4. Analyze the Impact Panel (for Semantic Models):
+- A side panel opens showing an impact summary (workspaces, reports, dashboards affected).
+- You can see usage metrics (views, viewers).
+- Use the Notify Contacts link to send messages about potential changes to affected teams. 
+
+// 5. Trace Downstream Items (All Assets):
+- In the Lineage View, select the arrow on the bottom-right of a specific item's card (like a Lakehouse table or Dataflow output) to highlight its direct downstream lineage.
+- Follow the arrows to see reports, dashboards, or other models that rely on that data. 
+
+// 6. Explore Cross-Workspace Dependencies: 
+- If a downstream item is in another workspace, you'll see it in the lineage view. You might need to navigate to that source workspace to perform further analysis on its impacts. 
+
+
+// 7. Before Making Changes (Proactive Analysis):
+- Before changing a Lakehouse table, schema, or Dataflow, run an impact analysis on it first.
+- This acts as a preview, showing which reports, dashboards, or downstream models will break if you proceed, allowing you to fix them first. 
+
+By following these steps, you can effectively use Fabric's built-in lineage and impact analysis tools to manage changes and maintain data reliability across your analytics ecosystem. 
+
+
+
+////////
+
+
+
+In Azure Fabric, impact analysis helps you see what breaks when you change a source (like a Lakehouse table or Dataflow), primarily using the built-in Lineage View and Semantic Model Impact Analysis, letting you track data flow from source to reports/dashboards, notify contacts, and understand affected assets before making changes, ensuring data reliability. 
+
+Step-by-Step Impact Analysis in Azure Fabric
+
+// 1. Understand the Core Tool: Lineage View
+- Access Lineage: Open your Fabric workspace, find the item (Lakehouse table, Warehouse table, Dataflow, Semantic Model), and select the "Lineage" icon (looks like branching lines) from the item card or within the item's details pane.
+- Visualize Flow: This shows a graph of data flow: where the data comes from (upstream) and where it goes to (downstream). 
+
+
+// 2. For Lakehouses & Warehouses (Table/View Level)
+- Navigate to Item: In the workspace, find your Lakehouse or Warehouse.
+- Select Table/View: Open the table/view you plan to change.
+- Check Lineage: Go to the Lineage View to see connected Dataflows, Semantic Models, Reports, and Dashboards.
+- Simulate Changes: Before updating schema (e.g., adding/removing columns), review the lineage to see if semantic models or reports will fail due to missing columns. 
+
+
+// 3. For Dataflows (Gen2)
+- Open Dataflow: Go to your Dataflow Gen2 in the workspace.
+- Use Lineage: Similar to tables, the lineage view shows upstream sources and downstream consumers (Semantic Models, Lakehouse/Warehouse tables).
+- Identify Impact: If you change a query or a source in the Dataflow, the lineage highlights which downstream components will be affected. 
+
+
+// 4. For Semantic Models (Power BI)
+- Select Semantic Model: Find the model in your workspace.
+- Run Impact Analysis: Click the "Impact analysis" button (often a button on the card or in the details).
+- Review Impact Summary: A side panel opens showing:
+- Potentially impacted workspaces, reports, dashboards.
+- Total views/viewers of affected reports.
+- Notify Contacts: Use the "Notify contacts" link to message users in affected workspaces about planned changes. 
+
+
+// 5. For Reports & Dashboards (Power BI)
+- Check Data Source Lineage: Open the Report or Dashboard. Go to its Lineage View (often via its own card or settings).
+- Trace Back: Trace the data back through the Semantic Model to the Lakehouse/Warehouse/Dataflow to find the root source of data. 
+
+
+// Key Actions During Analysis:
+- Identify Affected Assets: Pinpoint exactly which reports, dashboards, semantic models, and tables depend on the changing asset.
+- Communicate: Use the built-in notification features to warn users.
+- Plan Fixes: Adjust downstream reports, update semantic models (e.g., removing unused measures), or modify dataflows to accommodate source changes. 
+
+
+# In essence, Microsoft Fabric unifies this by making Lineage the central place to see these connections across all data assets, from raw data in Lakehouses to final insights in Power BI. 

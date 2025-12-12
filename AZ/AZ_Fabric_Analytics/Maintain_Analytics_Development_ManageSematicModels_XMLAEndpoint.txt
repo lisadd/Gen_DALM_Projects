@@ -1,0 +1,96 @@
+Deploying and managing Microsoft Fabric semantic models via the XMLA endpoint programmatically primarily involves using Tabular Model Scripting Language (TMSL) or the Tabular Object Model (TOM) API with tools like PowerShell or Python libraries such as pyadomd. The steps below outline the general procedures and a Python code example. 
+
+
+Step-by-Step Procedures
+
+Prerequisites
+1. Fabric Capacity: Ensure your workspace is assigned to a Microsoft Fabric capacity (e.g., F64 or higher, or Premium Per User) that supports the XMLA endpoint.
+
+2. Enable XMLA Read-Write: The XMLA endpoint setting must be set to Read Write in the Fabric Admin portal under Capacity settings > Workloads or Premium Per User settings.
+
+3. Permissions: You need workspace access permissions at the same level as regular users or use a service principal with appropriate permissions.
+
+4. Connection String: Obtain the workspace connection string, which is the workspace URL in the format powerbi://api.powerbi.com/v1.0/[tenant name]/[workspace name].
+
+5. Tools/Libraries:
+External Tools: Tools like SQL Server Management Studio (SSMS) or Tabular Editor can connect via the XMLA endpoint.
+Python: Install the pyadomd and authentication libraries (e.g., azure-identity or MSAL). 
+
+
+Deployment/Management Steps
+1. Connect to the XMLA Endpoint: Use an external tool or a script to establish a connection to the Fabric workspace using the connection string and appropriate authentication (e.g., Azure AD Universal with MFA).
+2. Prepare the Model Definition (TMSL/BIM): The semantic model metadata is represented in TMSL (JSON-based) or a BIM file. You typically create this using Power BI Desktop or a tool like Tabular Editor.
+3. Perform Write Operations: Once connected, you can perform various operations:
+	- Deployment: Send the entire TMSL definition to create a new semantic model in the workspace.
+	- Management: Use TMSL commands or TOM API calls to apply changes (e.g., updating table schemas, creating relationships), refresh data, or customize properties without republishing from Power BI Desktop. 
+
+
+// Python Code Example (Management: Refreshing a Model)
+#The following Python code demonstrates connecting to the XMLA endpoint and triggering a semantic model refresh using the pyadomd library and token-based authentication. 
+
+Prerequisites: Install necessary Python libraries: 
+
+pip install pyadomd azure-identity
+
+
+# Code Example:
+
+import struct
+from itertools import chain, repeat
+from azure.identity import InteractiveBrowserCredential
+from pyadomd import Pyadomd
+
+# --- Configuration ---
+FABRIC_WORKSPACE_URL = "powerbi://api.powerbi.com"
+SEMANTIC_MODEL_NAME = "YourSemanticModelName"
+AUTHORITY_URL = "login.microsoftonline.com" # Replace with your tenant ID or 'common'
+
+# --- Authentication: Acquire Access Token ---
+# Use InteractiveBrowserCredential for local interactive login. 
+# For automation/CI-CD, consider using AzureCliCredential or a Service Principal.
+credential = InteractiveBrowserCredential(authority=AUTHORITY_URL)
+
+# The scope required for Power BI/Analysis Services
+token_object = credential.get_token("analysis.windows.net")
+token = token_object.token
+
+# Format the token for the pyadomd library (Windows byte string format)
+token_as_bytes = bytes(token, "UTF-8")
+encoded_bytes = bytes(chain.from_iterable(zip(token_as_bytes, repeat(0))))
+token_bytes = struct.pack("<i", len(encoded_bytes)) + encoded_bytes
+
+# Connection string with the token attribute
+conn_string = f"Provider=MSOLAP;Data Source={FABRIC_WORKSPACE_URL};Initial Catalog={SEMANTIC_MODEL_NAME};"
+
+# Use the 'attrs_before' parameter in pyadomd connection to pass the access token
+try:
+    with Pyadomd(conn_string, attrs_before={1256: token_bytes}) as connection:
+        print(f"Successfully connected to the semantic model: {SEMANTIC_MODEL_NAME}")
+
+        # --- Management Operation: Trigger a Full Refresh using TMSL ---
+        # A simple TMSL command to refresh all tables in the model
+        tmsl_refresh_command = {
+            "refresh": {
+                "type": "full",
+                "commitMode": "transactional",
+                "maxParallelism": 2,
+                "objects": [
+                    {"database": SEMANTIC_MODEL_NAME}
+                ]
+            }
+        }
+        
+        # Note: Pyadomd primarily executes DAX/MDX queries. To execute TMSL, 
+        # you would typically use Analysis Services client libraries in C# or PowerShell. 
+        # The Python ecosystem often uses alternative approaches like the Power BI REST APIs or community tools for full deployment.
+        
+        # Example of a simple MDX query to verify connection (TMSL execution is more complex in Python)
+        cursor = connection.cursor()
+        cursor.execute("SELECT * FROM $system.discover_datasets()")
+        rows = cursor.fetchall()
+        print(f"Successfully executed a DMV query. Found {len(rows)} datasets.")
+
+except Exception as e:
+    print(f"An error occurred: {e}")
+
+
