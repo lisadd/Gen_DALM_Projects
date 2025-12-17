@@ -1,0 +1,66 @@
+To query and analyze data using DAX in Microsoft Fabric, you will primarily use the DAX query view in the Power BI experience. DAX queries are typically used against a semantic model (dataset) that has already imported or connected to your data (e.g., from a Lakehouse or Data Warehouse). 
+
+
+
+// Example Steps to Query Data with DAX:
+
+1. Navigate to the Power BI Persona within your Microsoft Fabric workspace.
+
+2. Select a Semantic Model: Locate the semantic model you want to query in the Data Hub or the workspace content list.
+
+3. Open the DAX Query View: From the semantic model details page or the context menu, select the option to "Write DAX queries". In Power BI Desktop, this is a dedicated icon in the left-hand pane.
+
+4. Write and Run Your Query: Use the DAX editor to write your query. All DAX queries for analysis must use the EVALUATE statement, which returns a table of results.
+
+5. Analyze Results: Run the query and view the results in the integrated results pane. 
+
+Example Code: Select, Filter, and Aggregate Data 
+
+The following DAX query demonstrates how to select specific columns, filter the data for a certain product category and quantity, and aggregate sales amounts. 
+
+
+EVALUATE
+SUMMARIZECOLUMNS
+(
+    -- 1. Select / Group by columns
+    'Date'[Calendar Year],
+    'Product'[Category],
+    'Geography'[Country],
+
+    -- 2. Optional filters (applied to the entire result set)
+    FILTER(
+        VALUES('Product'[Category]),
+        'Product'[Category] = "Clothing"
+    ),
+
+    -- 3. Measures/Expressions to aggregate the data
+    "Total Sales Amount", CALCULATE(SUM('Sales'[SalesAmt])),
+    "Total Quantity Sold (Filtered)", CALCULATE(
+        SUMX(
+            FILTER(
+                'Sales',
+                'Sales'[Quantity] > 5 -- Further filter condition
+            ),
+            'Sales'[Quantity]
+        )
+    )
+)
+ORDER BY
+    'Date'[Calendar Year] DESC,
+    "Total Sales Amount" DESC
+
+
+
+
+// Code Breakdown:
+
+- EVALUATE: The mandatory statement at the beginning of a DAX query that specifies the expression to be evaluated and returned as a table.
+- SUMMARIZECOLUMNS: A powerful function used to group by specified columns and aggregate data using expressions or measures.
+- Grouping Columns: We select [Calendar Year], [Category], and [Country] to break down the results by these dimensions.
+- FILTER with VALUES: This part filters the entire evaluation context to only include rows where the [Category] is "Clothing".
+
+// Aggregations (Measures):
+- "Total Sales Amount" calculates the sum of [SalesAmt] for each group.
+- "Total Quantity Sold (Filtered)" uses SUMX and FILTER to iterate through the Sales table and sum the [Quantity] only for sales where more than 5 units were sold in a single transaction, demonstrating a more complex, row-level filter within an aggregation.
+
+ORDER BY: Sorts the resulting table by Year and Sales Amount for better readability. 

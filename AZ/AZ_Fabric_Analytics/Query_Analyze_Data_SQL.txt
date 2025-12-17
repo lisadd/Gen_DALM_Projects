@@ -1,0 +1,71 @@
+In Microsoft Fabric (the current name for what was formerly referred to in some contexts as "Azure Data Fabric") you can query data using standard T-SQL (Transact-SQL) in the web-based SQL query editor or within a notebook. 
+
+// Steps to Query and Analyze Data in Microsoft Fabric
+
+1. Open the Microsoft Fabric Portal: Navigate to the Microsoft Fabric portal and sign in to your account.
+
+2. Select Your Workspace: Choose the workspace where your data (Warehouse or Lakehouse SQL analytics endpoint) is located.
+
+3. Access the SQL Query Editor:
+	1. For a Warehouse or SQL analytics endpoint: Select the desired data object in the workspace. In the ribbon, select New SQL query to open the editor.
+	2. For a Notebook: If you prefer using a notebook, select New Item > Notebook in your workspace, then change the kernel environment from PySpark to T-SQL.
+
+4. Write and Run Your SQL Query: In the query editor (or T-SQL notebook cell), write your T-SQL code to select, filter, and aggregate data, then select Run to execute the query.
+
+5. Review and Analyze Results: The results will be displayed in the results pane below the query editor. You can view charts, download the data in various formats (CSV, JSON, Excel), or save the query as a view or a new table for further analysis. 
+
+
+// Example Code: Select, Filter, and Aggregate Data
+Assuming you have a table named SalesLT.Product and a related table SupplyChain.Warehouse in your Fabric SQL database, here are examples of T-SQL queries:
+
+1. Select and Filter Data
+This query selects specific columns and filters records based on a condition, such as products with a ListPrice greater than $100. 
+
+
+SELECT
+    Name,
+    ProductNumber,
+    ListPrice,
+    SellStartDate
+FROM
+    [SalesLT].[Product]
+WHERE
+    ListPrice > 100.00;
+
+
+
+2. Aggregate Data
+This query aggregates data to count the number of products grouped by their ProductCategoryID, to understand which categories have the most items. 
+
+
+SELECT
+    ProductCategoryID,
+    COUNT(ProductID) AS NumberOfProducts
+FROM
+    [SalesLT].[Product]
+GROUP BY
+    ProductCategoryID
+ORDER BY
+    NumberOfProducts DESC;
+
+
+3. Select, Filter, and Aggregate Across Tables (Cross-warehouse query example using three-part naming) 
+For a more complex analysis, you can join data from multiple tables, apply filters, and aggregate results. This example joins products and warehouse inventory data to calculate the total quantity on hand for products started selling in 2014, grouped by product name. 
+
+
+SELECT
+    P.Name,
+    SUM(W.QuantityOnHand) AS TotalQuantityOnHand
+FROM
+    [SalesLT].[Product] AS P
+JOIN
+    [SupplyChain].[Warehouse] AS W ON P.ProductID = W.ProductID
+WHERE
+    YEAR(P.SellStartDate) = 2014 -- Filters products sold in a specific year
+GROUP BY
+    P.Name
+ORDER BY
+    TotalQuantityOnHand DESC;
+
+
+Note: This example uses two-part naming for the tables within the same database context. For cross-warehouse queries, you would use a three-part naming convention like [WarehouseName].[SchemaName].[TableName]. 
