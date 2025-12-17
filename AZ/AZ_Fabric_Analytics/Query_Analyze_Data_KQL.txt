@@ -1,0 +1,62 @@
+To query and analyze data in Microsoft Fabric using KQL (Kusto Query Language), you primarily use the KQL Queryset feature in the Real-Time Intelligence experience. KQL queries process data through a series of operators, separated by the pipe (|) character, forming a pipeline. 
+
+
+// Step-by-Step Guide to Query Data with KQL
+
+1. Access your KQL Database: Navigate to your Microsoft Fabric workspace and select the KQL database containing your data (e.g., within an Eventhouse).
+
+2. Open the Query Editor: Select the table you want to query in the left pane. Hover over the table name, select the ellipsis (...), and choose Query with code to open a new KQL query tab in the queryset editor.
+
+3. Write and Run KQL: The editor provides an environment with IntelliSense and sample queries to help you start. Write your KQL query in the editor.
+
+4. Execute the Query: Select the query code you want to run and click the Run button on the menu bar. The results will be displayed in the results pane below the editor. 
+
+KQL Code Examples:
+
+The following examples use a hypothetical table named BikeStream with columns like Neighbourhood, No_Bikes, and No_Empty_Docks (based on common Microsoft Fabric examples). 
+
+1. Select Data (Limit records) 
+To quickly view a sample of records and check the data structure, use the take operator. 
+
+// Use 'take' to view a sample number of records
+BikeStream
+| take 100
+
+
+2. Filter Data
+Use the where operator to filter records based on specific conditions. 
+
+// Filter the data to include only bike points in the "Bankside" neighbourhood
+BikeStream
+| where Neighbourhood == "Bankside"
+| take 100
+
+
+You can combine conditions using and, or, and not. 
+
+// Filter for Bankside and where there are more than 5 bikes available
+BikeStream
+| where Neighbourhood == "Bankside" and No_Bikes > 5
+| take 100
+
+
+3. Aggregate Data
+Use the summarize operator to aggregate data. This is often combined with the by clause to group results. 
+
+// Calculate the total number of bikes for each neighbourhood
+BikeStream
+| summarize ["Total Number of Bikes"] = sum(No_Bikes) by Neighbourhood
+
+
+4. Select and Refine Columns (project)
+Use the project operator to select specific columns, rename them, or apply case statements for better presentation. 
+
+
+// Summarize data and then project specific, clean column names
+BikeStream
+| summarize ["Total Number of Bikes"] = sum(No_Bikes) by Neighbourhood
+| project Neighbourhood = case(isempty(Neighbourhood) or isnull(Neighbourhood), "Unidentified", Neighbourhood), ["Total Number of Bikes"]
+| sort by Neighbourhood asc
+
+
+

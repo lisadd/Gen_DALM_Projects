@@ -1,0 +1,71 @@
+To query, analyze, select, filter, and aggregate data in a Microsoft Fabric data warehouse using the Visual Query Editor, you can follow these steps. The Visual Query Editor provides a no-code experience similar to the Power Query diagram view. 
+
+// Steps for Querying and Analyzing Data with the Visual Query Editor
+1. Open the Visual Query Editor:
+- Navigate to your workspace in the Microsoft Fabric portal.
+- Select your data warehouse.
+- On the Home ribbon, select the dropdown next to New SQL query and choose New visual query. A blank canvas will appear.
+
+2. Add Tables to the Canvas:
+- In the Explorer pane, locate the tables you want to query under the dbo schema.
+- Drag and drop the desired table(s) (e.g., fact_sale, dimension_city) onto the visual query canvas. A preview of the data will appear.
+
+3. Select and Filter Data (Reduce Rows):
+- With a table selected on the canvas, you can filter the data.
+- On the query designer ribbon, select Reduce rows > Keep top rows (or use filtering options within the column headers).
+- Enter a value (e.g., 10000) to limit the dataset size for easier analysis, and select OK.
+- You can also filter by specific values by hovering over a column title, selecting the "More Options" (...) button, and choosing filter criteria.
+
+
+4. Join/Merge Data (Optional):
+- To combine data from multiple tables, drag another table onto the canvas.
+- On the query designer ribbon, select Combine > Merge queries as new.
+- In the Merge dialog, select the columns from the left and right tables that share a common key (e.g., CityKey) and choose a Join kind (e.g., Inner).
+- In the data preview pane for the merged table, use the Expand button in the column header to select which specific columns from the second table you want to include.
+
+
+5. Aggregate Data (Group By):
+- To group and aggregate your data, select Transform > Group by on the ribbon.
+- In the Group by dialog:
+	- Select the columns you want to group by (e.g., Country, StateProvince, City).
+	- In the New column name box, enter a name for your aggregate column (e.g., SumOfProfit).
+	- In the Operation dropdown, select an aggregate function (e.g., Sum).
+	- In the Column dropdown, select the column you want to aggregate (e.g., Profit).
+	- Select Add aggregation to add more aggregations.
+	- Select OK to apply the aggregation.
+
+
+6. Run and Review Results:
+- The query runs automatically as you apply steps, or you can select Run if needed. The results are displayed in the Results tab.
+- You can Rename the query tab to something meaningful (e.g., Sales Summary).
+- You can save the visual query as a view or a new table for future use. 
+
+Example Code (Equivalent T-SQL)
+
+While the Visual Query Editor is a no-code interface, you can view the underlying T-SQL code generated from your steps by selecting the View query option (or similar "View SQL script" option). 
+
+Here is an example of a T-SQL query that performs similar select, filter, and aggregate operations across two tables:
+
+
+SELECT
+    dim_c.Country,
+    dim_c.StateProvince,
+    dim_c.City,
+    SUM(fs.TaxAmount) AS SumOfTaxAmount,
+    SUM(fs.Profit) AS SumOfProfit,
+    SUM(fs.TotalIncludingTax) AS SumOfTotalIncludingTax
+FROM
+    dbo.dimension_city AS dim_c
+INNER JOIN
+    dbo.fact_sale AS fs ON dim_c.CityKey = fs.CityKey
+WHERE
+    -- Example of a filter condition on the source data
+    dim_c.StateProvince = 'New Hampshire' 
+GROUP BY
+    dim_c.Country,
+    dim_c.StateProvince,
+    dim_c.City
+ORDER BY
+    SumOfProfit DESC;
+
+
