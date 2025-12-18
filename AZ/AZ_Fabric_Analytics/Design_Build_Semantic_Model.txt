@@ -1,0 +1,93 @@
+In Microsoft Fabric, semantic models are central to business intelligence and data science, and can be managed through the UI, Python, or external tools using XMLA endpoints
+
+
+//Design and Build Semantic Models
+ 1. Semantic models are typically created in two ways:
+ 2. Directly in the Fabric UI: This is often done starting from an existing Lakehouse or Data Warehouse.
+Using Power BI Desktop: The traditional method involves building the model in Power BI Desktop and publishing it to a Fabric workspace. 
+
+
+// Steps via Fabric UI (No code):
+
+ - Create/Open a Lakehouse or Warehouse: Start in a Fabric workspace with an existing data source (Lakehouse, Warehouse, or KQL database).
+ - Create the Semantic Model: In the Lakehouse editor, select the Model view on the lower-left. In the top ribbon, select New semantic model and choose the tables you want to include.
+ - Define Relationships and Measures: In the modeling interface (which is similar to Power BI Desktop), you can drag and drop fields to create relationships between tables. You can also right-click a table to add New measure, New column, or New table using DAX formulas.
+ - Hide/Rename Fields: Improve user-friendliness by renaming tables/fields and hiding unnecessary primary/foreign keys.
+ - Build Reports: Once designed, you can instantly start creating Power BI reports directly from the semantic model within the Fabric portal. 
+
+// Implement and Manage Semantic Models with Python: 
+Python, specifically using the sempy library in Fabric notebooks, is used to manage, audit, and interact with existing semantic models, rather than defining their core structure (like relationships or measures) from scratch. 
+
+Example Python Code (using sempy.fabric)
+This code would run in a Microsoft Fabric notebook to interact with an existing semantic model. 
+
+Prerequisites:
+Run %pip install -U semantic-link in a notebook cell if you're not using the default runtime or want the latest version. 
+
+
+//// List Semantic Models:
+
+import sempy.fabric as fabric
+
+df_datasets = fabric.list_datasets()
+display(df_datasets)
+
+
+//// Read Data from a Table in a Semantic Model:
+
+import sempy.fabric as fabric
+
+# Replace "Your Semantic Model Name" and "Your Table Name"
+df_table = fabric.read_table("Customer Profitability Sample", "Customer")
+display(df_table)
+
+
+//// Validate Relationships in a Semantic Model: This function helps find inconsistencies before they affect analysis.
+
+import sempy.fabric as fabric
+
+tables = {
+    "Sales": fabric.read_table("my_dataset", "Sales"),
+    "Products": fabric.read_table("my_dataset", "Products"),
+    "Customers": fabric.read_table("my_dataset", "Customers"),
+}
+fabric.list_relationship_violations(tables)
+
+
+
+//// Execute a DAX query using Python:
+
+from sempy.internal. fabric import evaluate_dax
+
+# Replace "Your Workspace" and "Your Dataset Name"
+workspace_name = "<Your Workspace>"
+dataset_name = "<Your Dataset Name>"
+
+dax_query = """
+EVALUATE SUMMARIZECOLUMNS(
+    'Date'[Calendar Year],
+    "Total Sales", SUM(Sales[Sales Amount])
+)
+"""
+
+df_result = evaluate_dax(dataset_name, dax_query, workspace=workspace_name)
+display(df_result)
+
+
+//Using KQL or SQL for Data Preparation ---> REFERENCE: Use Fabric notebooks with data from a KQL database: https://learn.microsoft.com/en-us/fabric/real-time-intelligence/notebooks
+
+
+
+KQL or SQL are used to prepare the source data that the semantic model will consume (e.g., within a Lakehouse or Warehouse SQL analytics endpoint). You cannot use KQL or SQL to define relationships or measures in a semantic model directly. 
+Example KQL (for data exploration in a KQL DB)
+
+
+# Access a specific table in a KQL database
+yellowtaxidata
+| where trip_distance > 0
+| summarize count() by Payment_type
+| render columnchart
+
+
+
+

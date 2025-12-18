@@ -1,0 +1,237 @@
+In Microsoft Fabric, data modeling and complex calculations using DAX are primarily handled within the semantic model (Power BI) component, while data preparation and relationships can be implemented using SQL, Python, or KQL in the various data engineering and warehousing components. 
+
+1. Implementing Relationships (Bridge Tables, Many-to-Many)
+Many-to-many relationships are typically implemented using a bridge (or junction) table with two one-to-many relationships in a star schema design. 
+
+// In SQL (Synapse Data Warehouse/KQL Database)
+You can create the tables using standard SQL CREATE TABLE commands. 
+
+-- Create the main dimension tables
+CREATE TABLE Students (
+    StudentID INT PRIMARY KEY,
+    StudentName VARCHAR(100)
+);
+
+CREATE TABLE Courses (
+    CourseID INT PRIMARY KEY,
+    CourseName VARCHAR(100)
+);
+
+-- Create the bridge table to manage the many-to-many relationship
+CREATE TABLE StudentCourseBridge (
+    StudentID INT REFERENCES Students(StudentID),
+    CourseID INT REFERENCES Courses(CourseID),
+    PRIMARY KEY (StudentID, CourseID) -- Composite primary key for unique enrollment
+);
+
+-- Example of inserting data
+INSERT INTO Students VALUES (1, 'Alice'), (2, 'Bob');
+INSERT INTO Courses VALUES (201, 'Math'), (202, 'Physics');
+INSERT INTO StudentCourseBridge VALUES (1, 201), (1, 202), (2, 201);
+
+-- Example of querying the many-to-many relationship
+SELECT
+    S.StudentName,
+    C.CourseName
+FROM
+    Students S
+INNER JOIN
+    StudentCourseBridge SC ON S.StudentID = SC.StudentID
+INNER JOIN
+    Courses C ON SC.CourseID = C.CourseID;
+
+
+
+// In Python (Synapse Data Engineering Notebooks)
+You can use a library like pyspark to create and manage dataframes that can be saved as tables in a Lakehouse. 
+
+from pyspark.sql import SparkSession
+
+# Sample data for students and courses
+students_data = [(1, "Alice"), (2, "Bob")]
+courses_data = [(201, "Math"), (202, "Physics")]
+bridge_data = [(1, 201), (1, 202), (2, 201)]
+
+students_df = spark.createDataFrame(students_data, ["StudentID", "StudentName"])
+courses_df = spark.createDataFrame(courses_data, ["CourseID", "CourseName"])
+bridge_df = spark.createDataFrame(bridge_data, ["StudentID", "CourseID"])
+
+# Save as tables in the Lakehouse (e.g., 'students', 'courses', 'student_course_bridge')
+students_df.write.mode("overwrite").saveAsTable("students")
+courses_df.write.mode("overwrite").saveAsTable("courses")
+bridge_df.write.mode("overwrite").saveAsTable("student_course_bridge")
+
+# You can then use Spark SQL (or KQL in a KQL database) to query these tables with joins as shown in the SQL example.
+
+
+
+
+
+/// 2. Writing Calculations using DAX
+DAX calculations are created within the semantic model in the Power BI component of Fabric. They are defined in measures or calculated columns/tables using the formula bar or DAX editor. 
+
+//// Using Variables:
+Variables improve readability and can optimize performance by evaluating an expression once. 
+
+
+Total Sales YoY Variance Percentage =
+VAR SalesCurrentYear = SUM(FactSales[SalesAmount])
+VAR SalesLastYear = CALCULATE(SUM(FactSales[SalesAmount]), SAMEPERIODLASTYEAR('Date'[Date]))
+VAR Variance = SalesCurrentYear - SalesLastYear
+VAR VariancePercentage = DIVIDE(Variance, SalesLastYear)
+RETURN
+    VariancePercentage
+
+
+
+//// Using Iterators:
+Iterator functions (ending in X, like SUMX, AVerageX) evaluate an expression for every row in a specified table. 
+
+
+Total Line Item Value = SUMX(FactSalesDetails, FactSalesDetails[Quantity] * FactSalesDetails[UnitPrice])
+
+
+//// Using Table Filtering:
+The FILTER function is a table function commonly used inside CALCULATE to modify the filter context dynamically. 
+
+
+Sales for specific product =
+CALCULATE(
+    SUM(FactSales[SalesAmount]),
+    FILTER(
+        'DimProduct',
+        'DimProduct'[Category] = "Electronics"
+    )
+)
+
+
+
+//// Using Windowing Functions:
+Newer DAX windowing functions like WINDOW, OFFSET, and INDEX allow calculations over a specific range of rows. 
+
+-- Example: Calculate a running total of sales using WINDOW function (for visual calculations)
+Running Total Sales =
+WINDOW(
+    SUM(FactSales[SalesAmount]),
+    -1, REL, 0, REL,
+    ORDERBY('Date'[Date]),
+    PARTITIONBY('DimProduct'[Category])
+)
+
+
+
+
+//// Using Information Functions:
+Functions like ISCROSSFILTERED() or HASONEVALUE() can check the state of the filter context and return information about the data's shape, which is useful in many-to-many scenarios. 
+
+
+Check Product Filter Status =
+IF(
+    ISCROSSFILTERED('DimProduct'[ProductName]),
+    "One or more products selected",
+    "No product selected"
+)
+
+
+
+
+
+////////// FABRIC - COMPLEX DATA RELATIONSHIPS AND ADVANCED DAX CALCULATIONS:
+
+
+In Microsoft Fabric, implementing complex data relationships and advanced DAX calculations allows for robust analytical modeling across Lakehouses and Warehouses. 
+
+
+1. Implementing Many-to-Many Relationships
+In a standard star schema, many-to-many (M2M) relationships are best handled through a bridge table to ensure data accuracy and avoid ambiguity. 
+
+Steps to Implement via SQL (Data Warehouse)
+
+ 1. Identify Entities: Example: Students and Courses (one student can take many courses; one course has many students).
+ 2. Create Bridge Table: This table contains the unique identifiers (IDs) from both related tables. 
+
+
+-- SQL example for creating a bridge table in Fabric Data Warehouse
+CREATE TABLE EnrollmentBridge (
+    StudentID INT,
+    CourseID INT,
+    PRIMARY KEY (StudentID, CourseID)
+);
+
+
+
+Steps to Implement in Semantic Models (Power BI/Fabric):
+
+ - Relationship Setup: Create one-to-many relationships from each dimension table to the bridge table.
+ - Filter Propagation: Set the relationship cross-filter direction to "Both" (bi-directional) if you need filters from one dimension to reach the other through the bridge. 
+
+
+
+
+2. Advanced DAX Calculations:
+
+DAX in Microsoft Fabric supports sophisticated logic using variables, iterators, and windowing functions for dynamic reporting. 
+
+// Iterators and Variables:
+
+- Iterators like SUMX or AVERAGEX evaluate an expression for every row in a table. Using variables (VAR) inside these improves readability and performance. 
+
+
+-- DAX Measure using Variables and Iterators
+Total Sales Adjusted = 
+VAR TaxRate = 0.08
+RETURN
+    SUMX(
+        Sales,
+        Sales[Quantity] * Sales[UnitPrice] * (1 + TaxRate)
+    )
+
+
+// Table Filtering and Information Functions:
+
+- Table functions like FILTER allow you to define specific subsets of data. Information functions like ISFILTERED or HASONEVALUE help control logic based on report context
+
+-- Filtered measure with Information function check
+High Value Sales = 
+IF(
+    HASONEVALUE(Product[Category]),
+    CALCULATE(
+        [Total Sales],
+        FILTER(Sales, Sales[Amount] > 1000)
+    ),
+    BLANK()
+)
+
+
+// Windowing Functions:
+
+- Windowing functions (e.g., WINDOW, INDEX, OFFSET) allow for complex calculations over a set of rows relative to the current context, such as running totals or rolling averages.
+
+-- 3-Month Moving Average using the WINDOW function
+MovingAverage3Months = 
+AVERAGEX( 
+    WINDOW(
+        -2, REL,   -- Start 2 rows before current
+        0, REL,    -- End at current row
+        ALLSELECTED(DimDate[MonthName]), 
+        ORDERBY(DimDate[MonthKey])
+    ), 
+    [Total Sales]
+)
+
+
+
+
+// 3. Implementation in Python (Lakehouse/Notebooks):
+
+In a Fabric Lakehouse, you can use Python (PySpark) to programmatically handle many-to-many relationships by joining tables and creating unique mapping datasets
+
+
+# Python/PySpark snippet to create a bridge association
+df_students = spark.read.table("Students")
+df_courses = spark.read.table("Courses")
+
+# Create a bridge table from a source mapping
+bridge_df = df_students.join(df_courses, "common_id").select("StudentID", "CourseID")
+bridge_df.write.format("delta").saveAsTable("StudentCourseBridge")
+
