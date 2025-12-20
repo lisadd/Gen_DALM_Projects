@@ -1,0 +1,110 @@
+In Microsoft Fabric, semantic model design is primarily done using the Power BI interface (Desktop or web) and advanced features like calculation groups and large model formats are configured using external tools via the XMLA endpoint, such as Tabular Editor or SQL Server Management Studio (SSMS)
+
+
+// Design and Build Semantic Models with Advanced Features
+Implement Calculation Groups 
+
+Calculation groups allow you to define common measure expression patterns (e.g., time intelligence calculations like Year-to-Date, Quarter-to-Date) once and apply them to multiple base measures, reducing redundancy. 
+
+ - Tools Required: Power BI Desktop or the Power BI web modeling interface, or an external tool like Tabular Editor (open-source community tool).
+ - Language: Data Analysis Expressions (DAX). 
+
+// Steps via Power BI Model View (web or Desktop):
+
+ 1. Navigate to the Model view in your Fabric semantic model.
+ 2. Select Calculation group in the ribbon. A new calculation group with a single item is created.
+ 3. Rename the calculation group and its column (e.g., to "Time Intelligence").
+ 4. Rename the default calculation item (e.g., to "Current") and define its DAX expression: SELECTEDMEASURE().
+ 5. Create a new calculation item (e.g., "YTD") and define its DAX expression using DAX functions, like CALCULATE(SELECTEDMEASURE(), DATESYTD('Date'[Date])).
+ 6. In the report view, use the new calculation group column as a slicer or on a visual to dynamically apply the logic to your measures. 
+
+
+Example DAX (within the calculation item definition):
+
+-- Calculation Item: Current
+SELECTEDMEASURE()
+
+-- Calculation Item: Prior Year
+CALCULATE(
+    SELECTEDMEASURE(),
+    SAMEPERIODLASTYEAR('Date'[Date])
+)
+
+
+
+// Implement Dynamic Format Strings 
+
+Dynamic format strings allow the format of a measure to change based on context or a condition. This can be used independently for individual measures or in conjunction with calculation groups. 
+
+ - Tools Required: Power BI Desktop or web modeling interface.
+ - Language: DAX.
+
+Steps:
+
+ 1. Select the measure you want to format in the Data pane.
+ 2. In the Properties pane, expand the Format section.
+ 3. Select Dynamic from the Format dropdown.
+ 4. Enter a DAX expression to define the format string. 
+
+Example DAX (in the dynamic format string expression): 
+
+
+VAR SelectedFormat = IF( [Measure Value] < 1000, "$0.00", "$#,##0.00,," )
+RETURN
+    SelectedFormat
+
+
+
+This expression dynamically changes the format based on the value of the measure. 
+
+//Implement Field Parameters 
+
+Field parameters allow users to dynamically change the dimensions or measures being used in a visual through a slicer or filter in the report. 
+
+- Tools Required: Power BI Desktop or the web modeling interface in Fabric. 
+
+Steps:
+
+ 1. In the Modeling ribbon, select New parameters > Fields.
+ 2. In the Field parameters dialog, provide a name for the parameter (e.g., "Select Dimension").
+ 3. Drag the dimension fields (columns) you want to include into the Field parameters list.
+ 4. Check Add slicer to this page.
+ 5. In a report visual, use the new parameter in place of a dimension field. Users can now select which field to display. 
+
+
+
+// Configure Large Semantic Model Storage Format: 
+
+The primary use case for the large semantic model storage format (known as Direct Lake mode in Microsoft Fabric) is to enable analytics on massive datasets without needing to copy or import data, reading directly from the data lake (OneLake). This is ideal for scenarios where data volume is too large for traditional import models or near-real-time data access is required. 
+
+ - Tools Required: Fabric Lakehouse/Warehouse interface, Power BI Desktop, or XMLA-compliant tools (SSMS, Tabular Editor).
+ - Language: Configuration settings, XMLA scripts. 
+
+//Use Cases:
+
+ - Analyzing vast quantities of data (terabytes/petabytes) stored in the data lake.
+ - Minimizing data refresh times and latency, as data is read in near-real-time.
+ - Simplifying the data pipeline by eliminating the need for data ingestion into a separate Power BI-managed storage. 
+
+
+Configuration Steps:
+
+ 1. Create the Model: Create the semantic model from an existing Lakehouse or Warehouse within the Fabric portal. The system automatically uses Direct Lake mode when the data source is a Fabric Lakehouse or Warehouse.
+ 2. Verify Storage Mode: In Power BI Desktop, you can check the storage mode of tables. For advanced scenarios or to manage very large models, you might use the XMLA endpoint with tools like SSMS. 
+
+// SQL/KQL/Python Code:
+
+While these languages are used to prepare the data in the Lakehouse, they are not typically used to set the storage format of the semantic model itself, which is a configuration or metadata setting. The semantic link library in Python can interact with semantic models to read data and evaluate measures, but not configure storage format. 
+
+// You can use XMLA commands via SSMS to check the storage mode:
+
+-- Example command to check the storage mode of a table in an XMLA tool
+-- This isn't KQL/SQL, but the required command language for this task
+<GetStorageTables xmlns="schemas.microsoft.com">
+  <TableID>YourTableName</TableID>
+</GetStorageTables>
+
+
+The configuration of the large format dataset involves ensuring the underlying data source is structured correctly in OneLake (e.g., Delta tables in a Lakehouse). 
+
+
