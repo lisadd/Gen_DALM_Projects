@@ -1,0 +1,83 @@
+In Microsoft Fabric (formerly Azure Data Fabric), semantic models are primarily developed and managed using the Power BI experience, which includes a web-based model designer and Power BI Desktop. Composite models combine different data storage modes (Import, DirectQuery, Direct Lake) to enrich and combine datasets. 
+
+
+While the primary design work is visual, programmatic access using Python (via the sempy library and Semantic Link) and query languages like SQL and KQL allows for interaction, analysis, and limited programmatic design. 
+
+
+// Design and Build Semantic Models in Fabric:
+The main method for designing and building is using the UI tools:
+
+ 1. Create a base item: Start with a data source like a Lakehouse or Warehouse in your Microsoft Fabric workspace.
+ 2. Create a New Semantic Model: From the ribbon of the Lakehouse/Warehouse, select New semantic model and choose the relevant tables.
+ 3. Open the Data Model: Go to the workspace, select the new semantic model, and choose Open data model to use the web-based model designer.
+ 4. Define relationships and measures: In the model designer, you can manage relationships (one-to-many, etc.), rename fields, and add measures.
+ 5. Use External Tools: For advanced modeling (like specific composite model configurations or complex DAX), you can use external tools like SQL Server Management Studio (SSMS) via the XMLA endpoint. 
+
+
+
+
+// Designing and Building Composite Models
+A composite model allows combining data from multiple sources or storage modes within a single semantic model (e.g., combining a Direct Lake table with an imported Excel file). 
+
+ - In the Web: You can create Direct Lake and Import composite models using the Power BI experience in the web.
+ - In Power BI Desktop: This tool offers full control over setting different storage modes (Import, DirectQuery, Dual) for different tables to create a composite model. You can then publish it to Fabric. 
+
+// Programmatic Interaction (Python, SQL, KQL)
+While you cannot design the model structure (relationships, storage mode) from scratch using only Python, SQL, or KQL code, you can use these languages to interact with and analyze existing semantic models in Fabric notebooks.
+
+Python (using sempy and Semantic Link)
+Use Python in a Fabric notebook to list model properties and read data. 
+
+
+/// List tables and columns in a semantic model:
+
+import sempy.fabric as fabric
+
+df_tables = fabric.list_tables("YourSemanticModelName", include_columns=True)
+print(df_tables)
+
+
+/// Read data from a table:
+
+df_data = fabric.read_table("YourSemanticModelName", "YourTableName")
+print(df_data)
+
+
+/// Visualize relationships:
+
+from sempy.relationships import plot_relationship_metadata
+
+relationships = fabric.list_relationships("YourSemanticModelName")
+plot_relationship_metadata(relationships)
+
+
+
+
+
+
+/// SQL:  You can use SQL to query the data within the semantic model, especially if it's based on a Warehouse or Lakehouse SQL endpoint. 
+
+Query data in a Fabric notebook using %%sql magic:
+
+
+%%sql
+SELECT Customer.Country, SUM(Sales.TotalAmount) as TotalRevenue
+FROM pbi.`YourSemanticModelName`.Sales -- Note the pbi. prefix
+INNER JOIN pbi.`YourSemanticModelName`.Customer 
+    ON Customer.PK_Customer = Sales.FK_Customer
+GROUP BY Customer.Country
+
+
+
+/// KQL:  KQL is primarily for Real-Time Intelligence databases, but you can perform cross-service queries if OneLake integration is enabled. 
+
+Query a KQL database from a notebook:
+
+%%kql
+NYCTaxiDB.StormEvents 
+| where State == "ILLINOIS"
+| summarize count() by Severity
+
+
+
+
