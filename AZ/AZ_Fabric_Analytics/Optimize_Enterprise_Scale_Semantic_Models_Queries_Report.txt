@@ -1,0 +1,90 @@
+Optimizing enterprise-scale semantic models in Microsoft Fabric involves a combination of data engineering best practices and strategic model design to ensure the semantic model primarily operates in Direct Lake mode, avoiding costly fallbacks to DirectQuery. 
+
+
+// Steps for Optimization
+
+ 1. Monitor Performance: Use the Capacity Metrics App to identify items with high compute usage. In Power BI Desktop, the Performance analyzer can identify which visuals or queries are slow and whether DirectQuery is being used.
+
+
+2. Optimize Data Storage (SQL/Python):
+ 1. V-Order/Z-Order: Optimize the underlying Delta tables in the Lakehouse or Data Warehouse using V-Order or Z-Order to improve query performance and data compression. This is often an automated process in Fabric Warehouse but can be manually triggered in a Lakehouse.
+
+ 2. Materialized Views (SQL): Pre-compute and store data for frequently used aggregations or complex joins using materialized views in the Fabric Data Warehouse to accelerate queries.
+
+ 3. Materialize Views to Tables (SQL/Python): If using views in a semantic model causes DirectQuery fallback in Direct Lake mode, materialize the view logic into physical tables during the ETL process and reference those tables instead.
+
+ 4. Data Types: Ensure data types align with the data stored (e.g., use int for whole numbers instead of decimal where possible) to optimize storage and performance.
+
+ 5. Remove Unnecessary Data: Filter data at ingestion, remove unnecessary columns, and use aggregations (e.g., monthly summaries for historical data) to reduce the semantic model size.
+
+3. Optimize Semantic Model Design:
+ 	1. Star Schema: Design a star schema with clearly defined fact and dimension tables.
+ 	2. Hide Columns: Hide primary/foreign keys and irrelevant business keys from the report view to de-clutter the model and guide analysis tools (like Copilot) to meaningful fields.
+ 	3. Use Measures: Prefer measures over calculated columns on large tables to improve performance.
+ 	4. Incremental Refresh: For large tables, configure incremental refresh to process only recent partitions, reducing processing time.
+
+4. Optimize Report Visuals:
+	1. Limit Visuals: Avoid placing too many visuals on a single report page.
+	2. Efficient DAX: Write efficient DAX (Data Analysis Expressions) measures. Use DAX Studio to analyze query performance and identify bottlenecks. 
+
+
+//SQL: Optimizing Tables using V-ORDER and Materialized Views:
+
+-- Manually optimize a table for V-ORDER in a Fabric Lakehouse (this might be automatic in the Warehouse)
+OPTIMIZE TABLE SalesTransactions
+ZORDER BY (CustomerID, ProductID); -- Use ZORDER for multi-column optimization
+
+-- Create a materialized view in the Fabric Data Warehouse for common aggregations
+CREATE MATERIALIZED VIEW MV_MonthlySales AS
+SELECT
+    YEAR(SaleDate) AS SaleYear,
+    MONTH(SaleDate) AS SaleMonth,
+    ProductID,
+    SUM(SaleAmount) AS TotalSales
+FROM
+    SalesTransactions
+GROUP BY
+    YEAR(SaleDate), MONTH(SaleDate), ProductID; --
+
+
+// Python: Using the Kusto SDK to Query and Optimize in a Notebook 
+While direct semantic model optimization is done via model settings and data engineering, you can use Python in a Fabric notebook to run queries for analysis or data preparation. 
+
+
+# Install the Azure Kusto SDK if not already installed
+# !pip install azure-kusto-data
+# !pip install azure-kusto-ingest # Optional for ingestion
+
+from azure.kusto.data import KustoClient, KustoConnectionStringBuilder
+from azure.kusto.data.helpers import dataframe_from_result_table
+import pandas as pd
+
+# Connection details (get these from your KQL database details in Fabric)
+AAD_TENANT_ID = spark.conf.get("trident.tenant.id") # Example of getting Tenant ID from Spark conf
+KUSTO_CLUSTER = "https://<your_cluster_uri>.z0.kusto.data.microsoft.com"
+KUSTO_DATABASE = "<your_kql_database_name>"
+
+# Create a connection string using device login or service principal
+kcsb = KustoConnectionStringBuilder.with_interactive_login(KUSTO_CLUSTER, AAD_TENANT_ID)
+client = KustoClient(kcsb)
+
+# Example KQL query to identify top 10 rows for exploration
+kusto_query = f"['YourTableName'] | take 10"
+
+response = client.execute(KUSTO_DATABASE, kusto_query)
+df = dataframe_from_result_table(response.primary_results[0])
+print(df.head())
+
+# Example KQL query for performance analysis (e.g., summarizing data)
+perf_query = f"""
+YourTableName
+| where current_time > ago(7d)
+| summarize TotalActions = count() by ActionType, bin(current_time, 1h)
+| order by current_time asc
+| render linechart -- visualize directly in KQL queryset
+"""
+# Note: rendering is a KQL queryset function, for Python visualization, you'd process the dataframe using libraries like matplotlib/plotly
+
+
+
+
