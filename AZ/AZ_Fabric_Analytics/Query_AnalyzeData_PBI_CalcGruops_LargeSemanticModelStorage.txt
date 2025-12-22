@@ -1,0 +1,58 @@
+Power BI's advanced data analysis features, such as calculation groups, dynamic format strings, and field parameters, are primarily implemented using Data Analysis Expressions (DAX) within the Power BI Desktop or external tools like Tabular Editor
+
+
+//Implement Calculation Groups and Dynamic Format Strings: 
+Calculation groups and dynamic format strings centralize logic and reduce the number of redundant measures. 
+
+///Steps & Example (DAX)
+ 1. Enable Preview Feature: Ensure the "Calculation groups" preview feature is enabled in Power BI Desktop options.
+ 2. Open Model View: In Power BI Desktop, switch to the Model view.
+ 3. Create Calculation Group: In the ribbon, select Calculation group. A new group and a default item ("Calculation Item") will be created.
+ 4. Define Calculation Items: Rename the calculation group and its items. Use the DAX formula bar to define the expression for each item. 
+
+
+Example: Time Intelligence Calculation Group
+This group applies different time filters to any base measure (e.g., [Sales], [Orders]). 
+
+- Calculation Group Name: Time Intelligence
+- Calculation Items (DAX):
+  - 'Current' item: SELECTEDMEASURE() (represents the base measure as-is)
+  - 'YTD' item: CALCULATE(SELECTEDMEASURE(), DATESYTD('Date'[Date]))
+  - 'PY' item: CALCULATE(SELECTEDMEASURE(), SAMEPERIODLASTYEAR('Date'[Date])) 
+
+5. Dynamic Format Strings: To provide dynamic formatting based on the calculation item, select the calculation item and in the Properties pane, specify a format string expression, for instance, IF(ISBLCULATE(SELECTEDMEASURE_FORMATSTRING()), "0.00%", "$#,0;($#,0);$#,0"). 
+
+
+
+Implement Field Parameters: 
+Field parameters allow report readers to dynamically change the measures or dimensions being analyzed in a visual. 
+
+Steps & Example (UI-driven with DAX generated in the background)
+ 1. Enable Preview Feature: Ensure the "Field parameters" preview feature is enabled.
+ 2. Create Field Parameter: In the Modeling tab, select New parameter > Fields.
+ 3. Configure Parameter:
+	- Enter a Name for the parameter (e.g., Analyze By).
+	- Select the desired dimensions or measures from your data pane and add them to the parameter's fields list.
+	- Ensure Add slicer to this page is checked.
+	- Select Create. 
+
+
+Power BI automatically generates a new table with a column you can use in a slicer and in your visual's axis/values. 
+
+
+// Use Cases and Configuration of Large Semantic Model Storage Format 
+
+The large semantic model storage format (now the enhanced metadata format in Power BI Premium/Fabric workspaces) optimizes performance and enables advanced features for models exceeding the 10 GB limit. 
+
+
+Use Cases
+- Very large datasets: Models approaching or exceeding 10 GB in size benefit from the efficient data compression and memory management.
+- Query performance: It improves the speed of queries and data refresh operations for extensive data volumes.
+- Advanced capabilities: It is a prerequisite for some advanced features, such as calculation groups and XMLA endpoint read/write connectivity (necessary for external tools like Tabular Editor).
+- Incremental refresh: Efficiently handling data updates in large models. 
+
+
+// Configuration (Power BI Service):
+  1. Workspace Settings: The large semantic model storage format is configured at the workspace level for users with a Power BI Premium per user (PPU), Premium capacity (P), or Fabric capacity (F) license.
+  2. Enable in the Admin Portal: A Power BI administrator must go to the Admin portal, select Tenant settings, and enable the setting for Large semantic models storage format.
+  3.Apply to Specific Model: The setting is automatically applied to all semantic models within a Premium/Fabric workspace once the workspace setting is enabled. There is no specific Python, KQL, or SQL code to configure this; it is a platform setting. 
