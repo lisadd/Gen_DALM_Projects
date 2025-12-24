@@ -1,0 +1,89 @@
+Optimizing Microsoft Fabric semantic models and improving query performance involves using a combination of techniques and languages, primarily SQL/T-SQL, Python, and DAX (for the semantic model itself), with KQL being used specifically for real-time analytics scenarios. 
+
+//Optimize Enterprise-Scale Semantic Models
+
+Optimization at the semantic model level primarily involves design choices, data modeling best practices, and using appropriate storage modes (like Direct Lake). 
+
+ - Data Modeling Best Practices: Use a star schema design, hide unnecessary key columns, and ensure appropriate data types are used.
+ - Use Direct Lake Mode: This storage mode provides high performance by directly reading data from the data lakehouse's Delta tables without needing to import data or use DirectQuery SQL roundtrips.
+ - Implement Aggregations: For large historical data, use aggregation tables (e.g., monthly summaries) to speed up common queries.
+ - Avoid Calculated Columns on Large Tables: Prefer measures in DAX over calculated columns in large fact tables for better performance. 
+
+
+// Implement Performance Improvements in Queries and Report Visuals 
+
+Performance improvements in queries involve optimizing the underlying data storage and the queries themselves using the appropriate language for the environment (SQL analytics endpoint, Notebooks, KQL database). 
+
+SQL / T-SQL
+
+Optimization in the Fabric Data Warehouse/Lakehouse SQL endpoint often involves data management and standard SQL tuning: 
+
+- Use OPTIMIZE command for data compaction: Coalesce small Delta Lake files into larger, more efficient files for better read performance.
+
+OPTIMIZE <table_name>
+
+
+- Use ZORDER and VORDER for data organization: These commands physically organize data files in the Delta format to speed up data retrieval when filters are applied.
+
+-- Example for V-Order (optimization for Power BI Direct Lake alignment)
+ALTER TABLE <table_name> SET (DELTA.VORDER = TRUE)
+OPTIMIZE <table_name> VORDER
+
+-- Example for Z-Order (general data co-location)
+OPTIMIZE <table_name> ZORDER BY (<column_name>)
+
+
+- Use Materialized Views: Precompute and store complex query results to speed up subsequent queries.
+
+CREATE MATERIALIZED VIEW <view_name> 
+AS
+<select_statement>
+
+
+- Write efficient queries: Avoid SELECT *, use appropriate JOIN strategies, and limit the returned dataset size. 
+
+Python, using the sempy library within Fabric notebooks, can interact with semantic models for analysis or use Spark for data preparation and optimization. 
+
+
+- Read data with filters to limit dataset size:
+
+import sempy.fabric as fabric
+
+# Read a table with filters to limit data volume
+df_filtered = fabric.read_table("Customer Profitability Sample", "Customer", filters=['[State] == "WA"'])
+print(df_filtered.head())
+
+
+- Optimize Spark data processing: Use Spark for large-scale data cleansing and ensure data is stored in optimized formats like Parquet. 
+
+
+/// KQL (Kusto Query Language)
+KQL is used for real-time analytics. Optimizations are often handled automatically via the engine's design (e.g., optimized for time-series data), but you can leverage specific functions. 
+
+
+- Use Materialized Views for high-performance aggregations:
+
+.create materialized-view <view_name> on table <source_table>
+<query_statement>
+
+
+- Sample KQL query (performance is inherent in KQL's design for large, time-series data):
+
+<source_table>
+| where Timestamp > ago(7d)
+| summarize count() by bin(Timestamp, 1h), EventType
+| render timechart
+
+
+
+// Report Visuals
+
+Performance improvements in report visuals often involve design changes within Power BI: 
+ - Use the new Card Visual: Place multiple measures within a single new card visual to allow the engine to generate one single DAX query instead of multiple for individual cards.
+ - Limit number of visuals and complexity: Complex visuals with many data points or extensive interactions can slow performance.
+ - Analyze performance in DAX Studio: Use external tools like DAX Studio to identify performance bottlenecks in DAX queries or areas that force DirectQuery mode. 
+
+
+
+
+

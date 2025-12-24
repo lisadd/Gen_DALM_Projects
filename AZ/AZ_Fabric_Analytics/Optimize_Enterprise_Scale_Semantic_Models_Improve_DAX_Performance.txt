@@ -1,0 +1,57 @@
+In Microsoft Fabric, optimizing enterprise-scale semantic models and improving DAX performance primarily involves architectural choices, using performance analysis tools, and materializing views into physical tables. The Azure Data Fabric you mentioned is generally referred to as Microsoft Fabric. 
+
+While Python, KQL, and SQL are used for data engineering and exploration in Fabric, direct DAX code optimization happens within the Power BI semantic model environment (e.g., in Power BI Desktop or the DAX query view in the Fabric portal) using the DAX language itself. 
+
+// 1. Optimizing Semantic Models with SQL and Python
+You can use SQL and Python in Fabric notebooks to structure data optimally before it reaches the semantic model, which is a key performance tuning strategy. 
+
+
+// SQL: Materializing Views for Direct Lake Performance 
+To ensure optimal performance with Direct Lake mode, materialize SQL views into physical tables in your data warehouse or lakehouse. 
+
+An example SQL query to materialize a view for improved Direct Lake performance is shown below: 
+
+
+-- Materialize view logic into a physical table to avoid DirectQuery fallback
+CREATE TABLE dbo. materialized_sales_agg AS
+SELECT
+    f.sale_date,
+    d.product_name,
+    d.category,
+    SUM(f.revenue) as daily_revenue
+FROM
+    sales_fact_delta f
+INNER JOIN
+    warehouse_dims.dim_product d ON f.product_id = d.product_id
+WHERE
+    f.sale_date >= DATEADD(DAY, -30, GETDATE())
+GROUP BY
+    f.sale_date,
+    d.product_name,
+    d.category;
+
+
+
+// Python: Co-locating Data with Spark/Synapse Notebooks
+
+
+Using Spark in a Fabric notebook, you can move frequently joined data to the same location (like a Lakehouse) to reduce cross-engine data movement. A Python example demonstrating this is available in the source document. 
+
+
+2. Improving DAX Performance
+Improving DAX performance involves creating efficient data models and writing optimized DAX formulas. Tools such as DAX Studio and DAX Optimizer can help identify performance issues. 
+
+DAX: Example of Optimization (SUMX with IF vs. CALCULATE)
+
+Optimizing DAX formulas often involves replacing less efficient patterns with more performant ones. An example in the source document shows how replacing SUMX with an IF predicate with an optimized version using CALCULATE can improve performance. The inefficient and optimized DAX examples are provided in the source document. 
+
+
+DAX: Using the DAX Query View
+
+The DAX query view in Fabric/Power BI allows you to run and analyze DAX queries directly for performance evaluation. An example DAX query for summarizing data is provided in the source documents. 
+
+3. KQL: Optimizing for Time-Series Data
+
+For log or time-series data, the KQL database in Fabric offers strong performance. While KQL queries are generally fast, for large datasets, using efficient operators like summarize and considering materialized views can be beneficial. An example KQL query optimizing time-series data analysis is available in the source document. 
+
+Additionally, you can execute KQL queries within a Python notebook using the kqlmagic extension for integrated analysis. An example of this integration is provided in the source document. 
