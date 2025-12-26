@@ -1,0 +1,86 @@
+Configuring Direct Lake fallback behavior is primarily done within the semantic model settings in the Microsoft Fabric UI or programmatically using the Tabular Object Model (TOM), Tabular Model Scripting Language (TMSL), or Fabric APIs.
+
+
+Configure Direct Lake Fallback Behavior: 
+The fallback behavior is a property of the semantic model, which determines what happens when Direct Lake cannot load data directly (e.g., due to unsupported features like SQL views or security settings). 
+
+Using the Microsoft Fabric UI
+
+ 1. Open your Fabric workspace and navigate to the Data pane/Model Explorer.
+ 2. Select the Semantic model.
+ 3. In the Properties pane, locate the Direct Lake behavior setting.
+ 4. Choose one of the following options:
+	- Automatic (Default): Allows Direct Lake mode with seamless fallback to DirectQuery when necessary (e.g., for certain security scenarios or feature limitations). This ensures reports display data but may impact performance.
+	- DirectLakeOnly: Ensures that all interactions attempt to use pure Direct Lake mode. If a fallback is required, the query/visual will fail, thus ensuring no performance degradation from unexpected DirectQuery operations.
+	- DirectQueryOnly: Always forces the semantic model to use DirectQuery mode, running all DAX queries as SQL queries through the Warehouse/SQL endpoint. 
+
+
+// Using Code (TMSL via XMLA endpoint)
+
+For advanced users or automated deployments, you can use the XMLA endpoint with tools like SQL Server Management Studio (SSMS) or Tabular Editor to modify the semantic model's properties. The relevant property in the Tabular Object Model (TOM) is DirectLakeBehavior. 
+
+Example (TMSL - Tabular Model Scripting Language):
+
+You can send an Alter command to the XMLA endpoint to change the property: 
+
+{
+  "alter": {
+    "object": {
+      "database": "YourSemanticModelName",
+      "workspace": "YourWorkspaceName"
+    },
+    "dataSources": [
+      {
+        "name": "SqlServer data source",
+        "properties": {
+          "DirectLakeBehavior": "DirectLakeOnly"
+        }
+      }
+    ]
+  }
+}
+
+
+
+// Configure Direct Lake Refresh Behavior 
+By default, Direct Lake semantic models automatically detect data changes in the underlying Delta tables in OneLake. This automatic synchronization (sometimes referred to as "reframing") means manual scheduling isn't typically required for the semantic model itself. 
+
+If you disable the automatic updates setting in the Fabric workspace, you must manually refresh the semantic model metadata. 
+
+// Using Python/APIs for Orchestration
+
+You can use Python within a Fabric notebook to trigger a semantic model refresh programmatically as part of an orchestration pipeline. This uses the Power BI REST APIs, accessible via a Fabric notebook. 
+
+Example (Python using sempy or REST API calls):
+
+You would typically use the Power BI REST API to trigger a dataset refresh. This often involves authenticating and sending a POST request to the refresh endpoint. 
+
+import requests
+import json
+from azure.identity import DefaultAzureCredential
+
+# Example using the requests library and Managed Identity (or Service Principal)
+# This assumes appropriate permissions and authentication setup
+
+workspace_id = "YOUR_WORKSPACE_ID"
+dataset_id = "YOUR_DATASET_ID"
+url = f"api.powerbi.com{workspace_id}/datasets/{dataset_id}/refreshes"
+
+# Acquire a token (using DefaultAzureCredential for simplicity in Fabric environment)
+credential = DefaultAzureCredential()
+access_token = credential.get_token("analysis.windows.net").token
+
+headers = {
+    "Authorization": f"Bearer {access_token}",
+    "Content-Type": "application/json"
+}
+
+# Trigger a manual refresh
+response = requests.post(url, headers=headers)
+
+if response.status_code == 202:
+    print("Semantic model refresh triggered successfully.")
+else:
+    print(f"Failed to trigger refresh. Status code: {response.status_code}, Response: {response.text}")
+
+

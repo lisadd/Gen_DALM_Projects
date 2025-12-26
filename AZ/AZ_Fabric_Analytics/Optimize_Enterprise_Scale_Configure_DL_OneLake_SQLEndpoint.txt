@@ -1,0 +1,52 @@
+Optimizing enterprise-scale semantic models in Microsoft Fabric involves capacity planning and model design best practices. The choice between Direct Lake on OneLake and Direct Lake on SQL endpoints depends on multi-source needs and fallback requirements. 
+
+
+// Optimizing Enterprise-Scale Semantic Models
+Optimization in Microsoft Fabric focuses on managing capacity, designing a clean semantic model, and efficient data handling. 
+
+///Key Steps for Optimization
+1. Capacity Planning and Monitoring:
+ - Scale up capacity: Ensure sufficient Fabric capacity (F-SKUs) to handle peak workloads and avoid throttling.
+ - Monitor Usage: Use the Capacity Metrics App to track memory usage and performance.
+ - Enable Query Scale-out: In the semantic model settings in the Power BI service, enable the "Query scale-out" option to distribute the query load.
+
+2. Semantic Model Design Best Practices:
+ - Use Star Schema: Design an intuitive data model, preferably a star schema, for easier interpretation by AI and better performance.
+ - Optimize Tables and Columns:
+   - Remove unnecessary columns.
+   - Use business-friendly, natural language names for tables and columns for better AI integration and user understanding.
+   - Avoid calculated columns on large tables; use measures instead.
+ - Implement Aggregations: Use aggregated tables (e.g., monthly summaries) for historical data to reduce the load on detailed data.
+ - Optimize Data Ingestion (Lakehouse/Warehouse): Ensure underlying Delta tables are optimized. Aim for file sizes between 100 MB and 1 GB for optimal query performance. 
+
+
+/// Example Semantic Link - Python Code:
+
+You can programmatically interact with and optimize semantic models using the semantic-link library in Fabric notebooks. This example shows how to list columns in a semantic model (for auditing/optimization): 
+
+
+from sempy.fabric import list_columns
+from sempy.relationships import find_relationships
+
+# List columns in a specific semantic model and table
+# Replace 'YourWorkspace' and 'YourSemanticModel' with actual names
+df_cols = list_columns(workspace='YourWorkspace', semantic_model='YourSemanticModel', table='YourTableName')
+
+# Display the columns and their properties for review
+print(df_cols)
+
+# You can also use semantic link to check for relationships and potential issues
+find_relationships(workspace='YourWorkspace', semantic_model='YourSemanticModel')
+
+
+
+/// DL OneLake or DL SQL Endpoint:
+
+
+Choose Direct Lake on OneLake when you need a unified semantic model that pulls data from multiple Fabric items (e.g., combining data across different Lakehouses) and want the absolute best performance without the potential overhead of the SQL endpoint. This bypasses the SQL endpoint, providing a more direct path to the delta files.
+
+Choose Direct Lake on SQL endpoints if you rely on SQL views defined in your Warehouse or Lakehouse SQL endpoint, or if you require the DirectQuery fallback behavior to ensure queries always return a result, even if not at optimal performance. 
+
+Reference: https://data-mozart.com/a-tale-of-two-direct-lakes-in-microsoft-fabric/#:~:text=In%20Direct%20Lake%20on%20OneLake%20models%2C%20there,fallback%20behavior%20is%20still%20a%20viable%20option.
+
+
