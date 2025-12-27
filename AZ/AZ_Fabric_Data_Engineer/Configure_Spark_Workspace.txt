@@ -1,0 +1,43 @@
+In Azure Data Fabric, Spark workspace settings are primarily configured via the Workspace Settings UI or by creating and using Environment items. Configuration via Python is for session-level overrides, while KQL and SQL are not used for Spark configuration. 
+
+Via the Fabric Portal (Workspace Settings UI) 
+
+
+Workspace administrators can set the default Spark configurations for an entire workspace through the UI. 
+
+ 1. Navigate to your Microsoft Fabric workspace.
+ 2. Select the "Workspace settings" icon (usually a gear icon) in the top-right corner.
+ 3. Choose the Data Engineering/Science option in the left-hand menu.
+ 4. Select the Spark settings section.
+ 5. Configure settings on the Pool tab (e.g., autoscale nodes) or the Environment tab to set a default runtime and properties.
+ 6. Save your changes. 
+
+
+// Via Environment Items (Recommended for reusable configs)
+
+You can create an Environment artifact with specific Spark properties and then attach it as the workspace default or to specific notebooks/Spark job definitions. 
+
+ 1. Create or edit an existing Environment item in your workspace.
+ 2. Navigate to the Spark configurations section within the Environment settings.
+ 3. Add the desired Spark properties as key-value pairs (e.g., spark.fabric.resourceProfile = writeHeavy).
+ 4. Publish the environment.
+ 5. Attach this environment in the Workspace Settings or a specific notebook/job definition. 
+
+
+// Via Python (Session-level override)
+
+You can override the workspace or environment settings at runtime within a notebook using Python. This provides flexibility for specific job logic but does not change the global workspace settings. 
+
+
+%%pyspark
+# Use the spark.conf.set method to set a specific Spark configuration for the current session
+spark.conf.set("spark.sql.shuffle.partitions", "100")
+
+# You can also set a specific resource profile
+spark.conf.set("spark.fabric.resourceProfile", "readHeavyForSpark")
+
+# Verify the setting (optional)
+print(f"spark.sql.shuffle.partitions is set to: {spark.conf.get('spark.sql.shuffle.partitions')}")
+
+
+
