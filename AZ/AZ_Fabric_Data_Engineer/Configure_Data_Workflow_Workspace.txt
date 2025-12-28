@@ -1,0 +1,88 @@
+"Configuring data workflow workspace settings" in Microsoft Fabric is primarily a manual process done through the Fabric user interface, involving settings for resource allocation, scheduling, monitoring, and security"
+
+
+// Steps to Configure Data Workflow Workspace Settings:
+You configure these settings manually in the Fabric UI, typically by a Workspace or Fabric Administrator. 
+
+ 1. Navigate to your Workspace: In the Microsoft Fabric interface, select the desired workspace from the left navigation pane.
+ 2. Open Workspace Settings: Click the "Workspace settings" option, usually found by selecting the ellipsis (...) next to the workspace name or directly within the workspace view.
+ 3. Explore Relevant Tabs:
+  - About: Change the name, description, domain, and contact list.
+  - License mode: View or change the capacity and license type (e.g., Fabric capacity, Premium per user). This impacts available compute resources.
+  - Azure connections: Configure dataflow storage to use Azure Data Lake Gen2 or integrate with Azure Log Analytics for monitoring.
+  - Git integration: Configure version control by connecting the workspace to an Azure Repo.
+  - Monitoring: Enable workspace activity logging, which creates a KQL database to store monitoring data. 
+
+
+/// Code Examples for Related Data Activities:
+While workspace configuration is manual, you can use Python, KQL, and SQL within specific Fabric items (like Notebooks or KQL Querysets) to interact with data and implement workflow logic. 
+
+// Python (PySpark) in a Notebook
+You can use PySpark in a Fabric notebook to transform data, which is a core part of a data workflow. 
+
+
+# Example of data transformation in a Fabric Notebook using PySpark
+from pyspark.sql.functions import *
+
+# Assuming 'df' is a pre-loaded DataFrame from a Lakehouse table
+# e.g., df = spark.read.format("delta").load("abfss://<container>@<storageaccount>.dfs.core.windows.net/<path>")
+
+# Create Year and Month columns from an OrderDate column
+transformed_df = df.withColumn("Year", year(col("OrderDate"))).withColumn("Month", month(col("OrderDate")))
+
+# Filter and select specific columns
+transformed_df = transformed_df.select("SalesOrderNumber", "Year", "Month")
+
+# Write the transformed data back to a new delta table in the Lakehouse
+transformed_df.write.format("delta").mode("overwrite").save("abfss://<container>@<storageaccount>.dfs.core.windows.net/<new_path>")
+
+
+
+/// KQL in a KQL Queryset or Pipeline Activity 
+KQL is used for real-time analytics and data processing within a KQL database. 
+
+// Example KQL script to create a table and ingest data from a public blob
+// This can be run in a KQL queryset or as a KQL activity in a Data Factory pipeline
+
+.create table NYCTaxiTable (
+    VendorID long,
+    tpepPickupDateTime datetime,
+    tpepDropoffDateTime datetime,
+    passengerCount long,
+    tripDistance double,
+    RatecodeID long,
+    storeAndFwdFlag string,
+    PULocationID long,
+    DOLocationID long,
+    paymentType long,
+    fareAmount double,
+    extra double,
+    mtaTax double,
+    tipAmount double,
+    tollsAmount double,
+    improvementSurcharge double,
+    totalAmount double,
+    puYear long,
+    puMonth long
+)
+
+.ingest async from watch "https://<public_blob_url>/<file_name>.csv"
+with (format="csv", ignoreFirstRecord=true)
+
+
+/// SQL in a Warehouse
+T-SQL can be used in a Fabric Warehouse for data transformation and querying. 
+
+
+-- Example SQL query in a Fabric Warehouse to aggregate data
+CREATE TABLE AggregatedSales AS
+SELECT
+    Year,
+    Month,
+    SUM(totalAmount) AS TotalSales
+FROM
+    NYCTaxiTable  -- Assuming NYCTaxiTable exists in the warehouse
+GROUP BY
+    Year,
+    Month;
+
