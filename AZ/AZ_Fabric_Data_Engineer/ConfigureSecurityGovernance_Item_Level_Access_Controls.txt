@@ -1,0 +1,37 @@
+In Microsoft Fabric (formerly Azure Data Fabric), security and governance involve a multi-layered approach using workspace roles, item permissions, and SQL-native controls like Row-Level Security (RLS) and Column-Level Security (CLS). Item-level access controls are implemented primarily using T-SQL. 
+
+
+// Configure Security and Governance
+Security in Microsoft Fabric is managed at several layers: 
+  - Workspace Roles: Control access to all items within a workspace (Admin, Member, Contributor, Viewer).
+  - Item Permissions: Control access to individual items (e.g., Lakehouse, Data Warehouse, Semantic model).
+  - SQL-Native Controls: Fine-grained security within data items (RLS and CLS). 
+
+Governance involves establishing a framework of roles, policies, and processes, often leveraging Microsoft Purview for data labeling and auditing. 
+
+// Implement Item-Level Access Controls (Row-Level and Column-Level Security) 
+
+Item-level access controls, specifically RLS and CLS, are implemented using T-SQL within the SQL analytics endpoint of a Lakehouse or a Data Warehouse. Python and KQL do not have direct syntax for defining these security policies, but the policies apply to all access methods including Spark and KQL queries once enabled. 
+
+// Steps and Example Code (SQL/T-SQL)
+The following steps demonstrate how to implement RLS and CLS using SQL in Microsoft Fabric: 
+  1. Configure Row-Level Security (RLS) 
+RLS restricts which rows a user can see. Implementation involves creating a schema for security functions, an inline table-valued function to define filtering logic, and a security policy to apply the function to your table. You can find an example of implementing RLS in T-SQL on learn.microsoft.com. 
+  2. Configure Column-Level Security (CLS)
+CLS restricts access to specific columns by granting SELECT permissions on certain columns to a database role and potentially denying access to others. 
+
+CREATE ROLE CustomerDataViewer;
+
+GRANT SELECT ([Column1], [Column2], [Column3]) ON dbo.YourTable TO CustomerDataViewer;
+
+DENY SELECT ([SecretColumn], [PIIColumn]) ON dbo.YourTable TO CustomerDataViewer;
+
+
+  3. Manage Users and Roles
+To apply these controls, create a database user linked to a Microsoft Entra ID group and add that user to the custom role you created. 
+
+CREATE USER [ReportDevelopersGroup] FROM EXTERNAL PROVIDER;
+
+ALTER ROLE CustomerDataViewer ADD MEMBER [ReportDevelopersGroup];
+
+This ensures users in the specified group have restricted access based on the RLS and CLS policies. 
