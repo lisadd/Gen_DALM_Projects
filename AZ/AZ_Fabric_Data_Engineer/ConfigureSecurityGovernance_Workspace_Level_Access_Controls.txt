@@ -1,0 +1,75 @@
+In Microsoft Fabric, security and governance involve a multi-layered approach, with workspace-level access being managed primarily through predefined workspace roles. More granular controls (item-level, row-level, and column-level security) can be implemented using SQL. 
+
+// Configure Security & Governance
+Governance in Microsoft Fabric is enhanced by integration with Microsoft Purview for data discovery, cataloging, and policy enforcement. Security best practices involve using Microsoft Entra ID (formerly Azure AD) groups, applying the principle of least privilege, and regularly auditing permissions. 
+
+// Implement Workspace-Level Access Controls 
+Workspace-level access controls use Role-Based Access Control (RBAC) with four built-in roles: Admin, Member, Contributor, and Viewer. 
+
+// Steps to Implement Access Controls (UI-based)
+The primary method for managing workspace access is via the Fabric portal UI: 
+  1. Navigate to the Workspace: In the Microsoft Fabric portal, go to the desired workspace.
+  2. Manage Access: Select the Manage access option (usually found via the gear icon or a "..." menu).
+  3. Add Users/Groups: Select the + Add people or groups button.
+  4. Assign Roles: Enter the names of individual users or, preferably, Microsoft Entra ID security groups. Select the appropriate role (Admin, Member, Contributor, or Viewer) from the dropdown menu.
+  5. Confirm: Click Add to apply the permissions. 
+
+
+// Example Code for Automation (Python and SQL)
+While direct Python SDK or T-SQL commands for assigning workspace roles aren't standard, you can automate user management at more granular levels or use PowerShell/ARM templates for broader automation. 
+
+The most common programmatic access control is at the data level using SQL (T-SQL) for specific items like Warehouses or Lakehouse SQL endpoints (Object-Level Security and Row-Level Security). 
+
+// T-SQL Example (Row-Level Security - RLS):
+This example creates a security policy to restrict data access based on the user's login, which is more granular than workspace roles. This code runs in a Fabric KQL Queryset or a Fabric notebook using the KQL/SQL connection. 
+
+
+-- Step 1: Create a schema for the security function
+CREATE SCHEMA Rls;
+GO
+
+-- Step 2: Create a function that defines the RLS logic
+-- This function returns 1 if the user's name matches the 'analyst' column value
+CREATE FUNCTION Rls.tvf_location(@analyst AS varchar(50))
+RETURNS TABLE
+WITH SCHEMABINDING
+AS
+RETURN SELECT 1 AS tvf_location_result
+WHERE @analyst = USER_NAME();
+GO
+
+-- Step 3: Create the security policy and apply the filter predicate to a specific table
+CREATE SECURITY POLICY LocationRls
+ADD FILTER PREDICATE Rls.tvf_location(analyst) ON MySchema.MyTable
+WITH (STATE = ON);
+GO
+
+
+
+// Python Example (using the Fabric SDK for data scanning/cataloging):
+To integrate governance with Microsoft Purview using Python, you might use the SDK to register and scan data sources, although this doesn't directly manage workspace roles. 
+
+# Example of using the Microsoft Purview Python SDK (requires installation of azure-purview-catalog and azure-identity)
+
+from azure.purview.catalog import PurviewCatalogClient
+from azure.identity import DefaultAzureCredential
+
+# Initialize credentials
+credential = DefaultAzureCredential()
+purview_endpoint = "https://mycompany-purview.purview.azure.com" # Replace with your endpoint
+
+# Initialize the catalog client
+catalog_client = PurviewCatalogClient(
+    endpoint=purview_endpoint,
+    credential=credential,
+)
+
+# Example: Search the catalog for data assets (part of data governance)
+search_results = catalog_client.discovery.search_assets(query="sales data")
+for result in search_results.value:
+    print(f"Found asset: {result.name}")
+
+
+// Key takeaway: Workspace access is primarily a UI/portal operation or can be automated using PowerShell/ARM templates. Python, KQL, and T-SQL are used for more granular, data-level security controls within specific Fabric items. 
+
+

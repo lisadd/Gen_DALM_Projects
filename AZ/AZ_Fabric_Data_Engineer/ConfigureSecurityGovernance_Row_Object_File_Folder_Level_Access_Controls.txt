@@ -1,0 +1,69 @@
+In Microsoft Fabric (the 2025 evolution of Azure data services), security is managed across multiple layers, from the workspace level down to specific data rows and files. 
+
+// 1. Row-Level Security (RLS):
+RLS restricts data access at the row level based on user identity or roles. In 2025, this is primarily implemented in the Fabric Warehouse or SQL Analytics Endpoint using T-SQL. 
+ Steps:
+  - Create a schema to hold security objects.
+  - Define a Filter Predicate using an inline table-valued function.
+  - Apply a Security Policy to the target table. 
+
+// SQL Example:
+
+-- 1. Create Security Schema
+CREATE SCHEMA Security;
+GO
+
+-- 2. Create Security Predicate (Function)
+CREATE FUNCTION Security.fn_rls_predicate(@UserColumn AS nvarchar(100))
+    RETURNS TABLE WITH SCHEMABINDING
+AS
+    RETURN SELECT 1 AS result
+    WHERE @UserColumn = USER_NAME() OR USER_NAME() = 'Admin@yourorg.com';
+GO
+
+-- 3. Create Security Policy
+CREATE SECURITY POLICY Security.SalesFilter
+    ADD FILTER PREDICATE Security.fn_rls_predicate(SalesRegion)
+    ON dbo.SalesTable
+    WITH (STATE = ON);
+
+
+
+// 2. Column-Level Security (CLS)
+CLS allows you to restrict access to specific sensitive columns (e.g., credit card numbers) for certain users. 
+Steps: Use the GRANT SELECT statement on specific columns to define which users can view them. 
+
+SQL Example:
+
+-- Restrict user 'Analyst' to only non-sensitive columns
+GRANT SELECT ON dbo.Employees(EmployeeID, Name, Department) TO [analyst@yourorg.com];
+-- Attempting 'SELECT *' will now fail for this user
+
+
+// 3. Object-Level Security (OLS)
+OLS secures entire tables or columns from report viewers. For Semantic Models, this is often configured using external tools like Tabular Editor. In the SQL engine, it is managed via standard SQL permissions. 
+
+
+Steps: Deny or Grant permissions on specific database objects
+
+-- Revoke all access to the Payroll table for a specific role
+DENY SELECT ON OBJECT::dbo.Payroll TO [ExternalConsultants];
+
+
+// 4. Folder and File-Level Access Controls
+
+
+In 2025, Fabric manages file-level security through OneLake Data Access Roles (currently in preview). These roles allow you to grant access to specific folders or files within a Lakehouse without giving access to the entire workspace. 
+// Steps:
+  1. Open the Lakehouse and select Manage OneLake data access.
+  2. Create a New Role and select the specific folders or tables to include.
+  3. Assign users or groups to this role. 
+
+
+// 5. Governance and Global Security
+- Sensitivity Labels: Use Microsoft Purview to apply sensitivity labels (e.g., "Highly Confidential") that automatically enforce protection policies across Fabric items.
+- Workspace Roles: Assign users to one of four roles: Admin, Member, Contributor, or Viewer. Admins/Members/Contributors can usually bypass RLS/CLS, while Viewers are subject to these rules.
+- Network Security: Configure Private Links and Conditional Access in the Fabric Admin Portal to restrict traffic to known IP ranges or require MFA
+
+
+
