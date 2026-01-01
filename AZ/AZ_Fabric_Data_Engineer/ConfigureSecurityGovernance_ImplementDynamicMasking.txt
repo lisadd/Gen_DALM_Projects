@@ -1,0 +1,27 @@
+In Azure Data Fabric (Microsoft Fabric), security and governance involve a multi-layered approach using features like Microsoft Entra ID (formerly Azure AD) integration, Role-Based Access Control (RBAC), and Microsoft Purview sensitivity labels. Dynamic Data Masking (DDM) is implemented using T-SQL within the Fabric Data Warehouse or Lakehouse SQL endpoint.
+
+
+// 1. Configure Security and Governance 
+Security and governance are primarily configured through the Azure and Fabric portals, not typically via scripts. 
+
+  - Establish Access Controls: Utilize Microsoft Entra ID for authentication and enforce the principle of least privilege using Fabric's workspace and item-level RBAC.
+  - Implement Conditional Access: Configure Conditional Access policies in the Azure portal to enforce Multi-Factor Authentication (MFA), restrict access by location, or manage device type access.
+  - Utilize Microsoft Purview: Use Microsoft Purview Information Protection to discover, classify, and label sensitive data within your Fabric assets. Purview Audit can then monitor data access and user activity.
+  - Monitor and Audit: Regularly audit data access logs and user activities to detect security threats or policy violations. 
+
+// 2. Implement Dynamic Data Masking (DDM) 
+DDM can be applied to columns in a Fabric Data Warehouse or Lakehouse SQL endpoint to hide sensitive data in real-time without modifying the underlying data. This is achieved using T-SQL commands. 
+
+// Steps in T-SQL (SQL)
+
+  1. Sign in to the Fabric portal with an admin account and navigate to your Warehouse or Lakehouse SQL endpoint.
+  2. Open a new SQL query.
+  3. Define masking rules when creating a new table or add them to an existing column using T-SQL. 
+
+// Example Code: Creating a table with DDM 
+DDM rules are defined in T-SQL using the MASKED WITH (FUNCTION = '...') clause. Functions like partial, default(), and email() are available to mask data. 
+
+
+REFERENCE: For a detailed examples for creating a table with DDM and adding a mask to an existing column using T-SQL, see "How to implement dynamic data masking in Fabric Data Warehouse" https://learn.microsoft.com/et-ee/fabric/data-warehouse/howto-dynamic-data-masking, Microsoft.
+
+Users with admin privileges can view unmasked data by default. The GRANT UNMASK command can be used to allow other users to see unmasked data, and REVOKE UNMASK to remove this permission. 
