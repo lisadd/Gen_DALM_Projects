@@ -1,0 +1,87 @@
+Configuring security and governance, including applying sensitivity labels, in Azure Data Fabric is primarily an administrative function performed within the Microsoft Purview and Fabric portals. While manual application is common, programmatic application of sensitivity labels is possible using the Power BI REST admin APIs.
+
+
+// Configure Security & Governance
+Security and governance are managed through a combination of the Fabric Admin portal and the Microsoft Purview compliance portal. 
+
+  1. Enable Sensitivity Labels: A Fabric administrator must first enable sensitivity labels in the Fabric tenant settings by navigating to the Admin portal > Tenant settings > Information protection and enabling "Allow users to apply sensitivity labels for content".
+  
+  2. Create and Publish Labels: In the Microsoft Purview portal, compliance officers create and configure sensitivity labels (e.g., "Highly Confidential", "Public"). These labels are then published via label policies to specific users or groups within the organization.
+
+  3. Implement Governance Policies: Microsoft Purview protection policies can automatically enforce access restrictions on Fabric items based on their assigned sensitivity labels (e.g., blocking access to a KQL database for all but a select group of users).
+
+  4. Assign Roles and Permissions: Access to data and governance features is controlled via Role-Based Access Control (RBAC) in both Microsoft Purview and Fabric, using Microsoft Entra ID integration. 
+
+
+// Apply Sensitivity Labels to Items 
+Labels can be applied manually via the Fabric UI, or programmatically using the Power BI REST APIs. 
+
+
+/// Manual Application (UI)
+From the item's settings: Open the specific item (e.g., Lakehouse, Warehouse, KQL database, Power BI report) in the Fabric UI, navigate to its Settings, find the Sensitivity section, and select the appropriate label from the dropdown menu. 
+
+/// Programmatic Application (Python via Power BI REST API) 
+Programmatic labeling is supported for all Fabric items via the Power BI admin REST APIs, specifically the setLabels API. 
+
+
+Prerequisites:
+  - You must be a Fabric administrator.
+  - The admin user (or delegated user) must be included in a label policy that publishes the target label.
+  - An access token with the required Tenant.ReadWrite.All scope is needed. 
+
+// Python Example using requests library:
+This example demonstrates how to apply a label to a specific Fabric item (artifact) using a service principal or user with the necessary permissions.
+
+
+import requests
+import json
+
+# Configuration
+TENANT_ID = "YOUR_TENANT_ID"
+CLIENT_ID = "YOUR_CLIENT_ID"
+CLIENT_SECRET = "YOUR_CLIENT_SECRET"
+ARTIFACT_ID = "YOUR_FABRIC_ITEM_GUID" # e.g., Lakehouse ID, KQL database ID
+LABEL_ID = "YOUR_SENSITIVITY_LABEL_GUID" # e.g., "a1b2c3d4-e5f6-7g8h-9i0j-k1l2m3n4o5p6"
+
+# 1. Get an Azure AD access token
+authority_url = f"login.microsoftonline.com{TENANT_ID}/oauth2/v2.0/token"
+scope = "api.fabric.microsoft.com" # or "api.powerbi.com"
+payload = {
+    'client_id': CLIENT_ID,
+    'client_secret': CLIENT_SECRET,
+    'scope': scope,
+    'grant_type': 'client_credentials'
+}
+token_response = requests.post(authority_url, data=payload)
+access_token = token_response.json().get("access_token")
+
+if access_token:
+    headers = {
+        'Authorization': f'Bearer {access_token}',
+        'Content-Type': 'application/json'
+    }
+
+    # 2. Define the payload for the setLabels API
+    # The API expects a list of artifact label updates
+    api_url = "api.fabric.microsoft.com" # Check the exact API version
+    
+    label_update_payload = {
+        "artifactId": ARTIFACT_ID,
+        "labelId": LABEL_ID
+    }
+    
+    # 3. Call the REST API to set the label
+    # Note: This is an admin API and operates across workspaces/tenants if permissions allow
+    response = requests.post(api_url, headers=headers, json={"artifacts": [label_update_payload]})
+    
+    if response.status_code == 200:
+        print(f"Successfully applied sensitivity label {LABEL_ID} to artifact {ARTIFACT_ID}")
+    else:
+        print(f"Failed to apply label. Status code: {response.status_code}, Response: {response.text}")
+else:
+    print("Failed to acquire access token")
+
+
+
+
+

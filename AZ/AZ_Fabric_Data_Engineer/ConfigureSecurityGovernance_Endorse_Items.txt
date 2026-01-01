@@ -1,0 +1,72 @@
+Configuring security and governance and endorsing items in Microsoft Fabric is primarily a manual, UI-driven process within the Fabric portal, leveraging the Admin portal settings and workspace roles. This is because endorsement is a trust and visibility cue, not a security mechanism itself, and access control is managed via built-in roles and permissions.
+
+
+// Configure Security and Governance
+Security in Microsoft Fabric is managed at the workspace and item levels using a combination of workspace roles, item permissions, and Microsoft Purview sensitivity labels. 
+
+1. Workspace Roles (UI-driven)
+
+Workspace roles define the general level of access for users. 
+
+// Steps:
+ - Navigate to your desired workspace in the Fabric portal.
+ - Select the ellipsis (...) next to the workspace name and choose Workspace settings.
+ - Go to the Manage access tab.
+ - Add users or security groups and assign them a role (Admin, Member, Contributor, Viewer). 
+
+// 2. Item Permissions (UI-driven/T-SQL)
+Permissions can be set on individual items for more granular control. 
+- Steps (UI):
+  1. In a workspace, locate the specific item (e.g., Lakehouse, Warehouse, KQL Database).
+  2. Select the ellipsis (...) next to the item and choose Manage permissions or Security.
+  3. Add users/groups and assign specific permissions (e.g., Read, Write, Read all data, etc.).
+
+T-SQL Example (for Warehouse/SQL endpoint):
+You can use standard T-SQL to manage security within the SQL database or Warehouse endpoint.
+
+
+-- Grant SELECT permission on a specific table to a user
+GRANT SELECT ON OBJECT::[dbo].[YourTableName] TO [user@yourorg.com];
+
+-- Create a new database role and add a user to it
+CREATE ROLE DataViewers;
+ALTER ROLE DataViewers ADD MEMBER [user@yourorg.com];
+GRANT SELECT ON SCHEMA::dbo TO DataViewers;
+
+
+// 3. Sensitivity Labels (UI-driven)
+Microsoft Purview is used to apply sensitivity labels for compliance. 
+- Steps:
+  1. Ensure sensitivity labels are defined in the Microsoft Purview compliance portal.
+  2. In the Fabric portal, right-click an item and select Settings.
+  3. In the General tab, find the Sensitivity label section.
+  4. Select the appropriate label to classify the data. 
+
+
+// Endorse Items
+Endorsement indicates an item's quality and trustworthiness (Promoted, Certified, Master Data). This is configured in the Admin portal by a Fabric administrator and applied by authorized users in the item's settings. 
+  1. Enable Endorsement in Admin Portal (Admin only, UI-driven) 
+A Fabric admin must enable the feature and specify who can apply certain badges (e.g., Certified, Master Data). 
+// Steps:
+  1. Go to the Admin portal in Fabric.
+  2. Navigate to Tenant settings.
+  3. Under the Discovery settings section, enable the desired endorsement options (Certify content, Endorse master data (preview)).
+  4. Specify whether the entire organization or specific security groups are authorized to apply the badge. 
+
+
+// 2. Endorse an Item (UI-driven) 
+Authorized users can then endorse items in the workspace. 
+  Steps:
+  1. Navigate to the workspace containing the item you want to endorse.
+  2. Select the ellipsis (...) next to the item and choose Settings.
+  3. Expand the Endorsement section.
+  4. Select Promoted or, if authorized, toggle on Certified or Master data.
+  5. Select Apply to save the change. 
+
+
+
+
+
+
+
+
