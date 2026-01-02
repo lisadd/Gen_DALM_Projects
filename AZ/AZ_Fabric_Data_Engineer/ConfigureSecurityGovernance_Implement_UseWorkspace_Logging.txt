@@ -1,0 +1,90 @@
+Configuring security and governance in Azure Data Fabric involves using a combination of the Fabric Admin portal, the Azure portal, and code to implement specific controls. Workspace logging can be enabled in the Fabric Workspace settings and queried using KQL. 
+
+// Configure Security and Governance
+
+The primary methods for security and governance are role-based access control (RBAC), conditional access policies, and data classification/masking. 
+
+Steps:
+  1. Define Governance Policies: Establish clear data ownership, access, usage, and retention guidelines aligned with regulatory requirements (e.g., GDPR, HIPAA).
+  2. Implement Access Controls:
+     - Workspace Roles: Assign users or Microsoft Entra ID groups to workspace roles (Admin, Member, Contributor, or Viewer) in the workspace's "Manage access" option.
+     - Item-level Permissions: Grant specific permissions on individual items (Lakehouses, Warehouses, Semantic models) for finer-grained control.
+     - Row-Level Security (RLS) / Column-Level Security (CLS): Implement RLS/CLS within items like Lakehouse SQL analytics endpoints or Power BI semantic models to govern what data users can access.
+
+  3. Configure Conditional Access: In the Azure portal, configure conditional access policies to enforce multi-factor authentication or restrict access based on user context. Include "Power BI Service," "Azure Data Explorer," and related services as target resources.
+  4. Use Microsoft Purview for Data Governance: Leverage the integration with Purview for data discovery, classification, and applying sensitivity labels to data assets. 
+
+// Example Code (Python)
+You can use Python to manage access programmatically via the Fabric REST APIs (or related SDKs like the semantic-link-labs library). The following example shows how to use mssparkutils.credentials.getSecret to securely retrieve secrets from Azure Key Vault within a Fabric notebook: 
+
+
+# Install necessary libraries in your Fabric notebook first (if not already installed)
+# %pip install azure-kusto-data
+# %pip install azure-identity
+
+from azure.identity import DefaultAzureCredential
+from azure.kusto.data import KustoClient, KustoConnectionStringBuilder
+
+# Example of retrieving a secret from Azure Key Vault securely in a notebook
+# Use the mssparkutils built-in function
+# Replace 'your-vault-uri' and 'your-secret-name' with your actual details
+vault_uri = "your-vault-name.vault.azure.net"
+secret_name = "your-secret-name"
+# The token acquisition is handled by the Fabric environment
+access_token = mssparkutils.credentials.getToken(vault_uri) 
+
+# You can then use this token to authenticate with other services, e.g., Kusto
+kusto_cluster_uri = "https://<yourKQLdatabaseURI>.z0.kusto.data.microsoft.com"
+kusto_conn_string = KustoConnectionStringBuilder.with_interactive_login(kusto_cluster_uri) # Use interactive login, or a service principal method for automated tasks
+kusto_client = KustoClient(kusto_conn_string)
+
+# Note: Directly setting security/governance policies via a simple Python SDK is limited;
+# most configurations are done via the Fabric/Azure portals or their respective Admin APIs.
+
+
+
+// Implement and Use Workspace Logging 
+Workspace logging captures detailed telemetry on activities like pipeline runs and user actions, storing them in a dedicated KQL database within an Eventhouse. 
+
+Steps:
+  1. Enable Workspace Monitoring:
+  - In your Fabric workspace, go to Workspace Settings.
+  - Select the Monitoring tab.
+  - Turn on Log workspace activity. This automatically creates an Eventhouse and a read-only KQL database for logs.
+
+  2. View Logs: Access the created KQL database either via the link in the Monitoring settings or directly from your workspace's data items.
+  3. Query Logs using KQL: Use a KQL queryset to run queries against the log tables (e.g., ItemJobEventLogs, PipelineRunLog). 
+
+// Example Code (KQL)
+You can query the activity logs using Kusto Query Language (KQL) in the KQL queryset editor. 
+ - List all Fabric activities:
+ # List all Fabric activities
+FabricWorkspaceActivity
+| take 100
+
+ - Query pipeline run failures:
+
+# Find all pipeline run failures in the last 24 hours
+ItemJobEventLogs
+| where Timestamp > ago(24h)
+| where RunStatus == "Failed"
+| project Timestamp, ItemName, RunStatus, ErrorMessage
+
+ - Summarize data ingress per hour: (example using a general data table, not a specific log table)
+
+# This query returns the number of ingestions per hour in a given table
+YourTableName
+| summarize IngestionCount = count() by bin(ingestion_time(), 1h)
+ 
+
+
+// Example Code (SQL)
+
+For items with a SQL analytics endpoint (Lakehouse/Warehouse), you can use SQL to query data (though KQL is the primary language for the monitoring database). 
+sql
+-- View a sample of 100 records from a log table in the SQL analytics endpoint (if exposed)
+-- This is for general data, not typically the monitoring logs which are KQL DB only.
+SELECT TOP 100 * FROM YourTableName;
+Conditional access in Fabric - Microsoft Learn
+
+
