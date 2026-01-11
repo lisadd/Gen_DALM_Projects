@@ -1,0 +1,98 @@
+In Microsoft Fabric, ingesting and transforming streaming data with Eventstreams is a low-code/no-code experience primarily using the UI, or code-rich methods using PySpark (Python) in notebooks or KQL queries against a KQL database. Direct SQL (T-SQL) is for warehousing, while real-time SQL operations use the Eventstream SQL operator or KQL. 
+
+// Ingest and Transform Steps (Low-Code/No-Code UI)
+
+The primary method involves using the Fabric UI to create and configure an eventstream. 
+
+1. Create an Eventstream: In your Fabric workspace, select New > Eventstream in the Real-Time Intelligence experience.
+
+2. Add a Source: In the eventstream editor, select New source and choose your data source (e.g., Azure Event Hubs, Azure IoT Hub, or sample data). Follow the wizard to configure connection details and credentials.
+
+3. Add Transformation (Optional): Select the Transform events option in the eventstream editor to add operations like Filter, Aggregate, or Manage fields using a no-code interface or the SQL Code operator.
+
+4. Add a Destination: Select New destination and choose where to send the data (e.g., KQL database, Lakehouse). Configure the destination details through the provided wizard.
+
+5. Publish: Select Publish on the eventstream toolbar to start the data flow and processing. 
+
+// Processing Data with Code Examples
+
+Once data is in a KQL database or Lakehouse, you can process it using Python or KQL. 
+
+KQL (Kusto Query Language)
+KQL is used for real-time analytics on data stored in a KQL database. You can query data using the KQL Queryset editor in Fabric. 
+
+// Example 1: Filter and count data in a KQL database
+
+
+// Count records ingested in the last 24 hours
+bikes
+| where ingestion_time() between (now(-1d) .. now())
+| count
+
+
+
+// Example 2: Group and aggregate data by street every 5 seconds 
+The following logic can be applied either as an Eventstream SQL operator transformation or a direct KQL query on a table: 
+
+// This logic can be used in the Eventstream SQL operator or in a KQL query
+bikes
+| summarize SUM_no_Bikes = sum(No_Bikes) by Street, bin(Window_End_Time, 5s)
+| order by Window_End_Time desc
+
+
+
+// Python (PySpark in a Notebook)
+
+For more complex transformations or machine learning, you can use a Fabric notebook with PySpark. The following example shows how to use Spark Structured Streaming to read from an Event Hubs source (once configured in the Fabric environment) and write to a Delta Lake table in a Lakehouse. 
+
+from pyspark.sql import SparkSession
+from pyspark.sql.functions import *
+
+# Initialize Spark session (automatically available in Fabric Notebooks)
+# spark = SparkSession.builder.getOrCreate() # Already handled by Fabric
+
+# Define Event Hubs connection string (store securely in Azure Key Vault or Fabric environment variables)
+eh_connection_string = "Endpoint=sb://<your_namespace>.servicebus.windows.net/..." # Replace with actual connection string
+
+# Read stream from Event Hubs
+df = (
+    spark.readStream
+    .format("eventhubs")
+    .option("eventhubs.connectionString", eh_connection_string)
+    .load()
+)
+
+# Transform the data (example: selecting body and casting to string, adding a timestamp)
+processed_df = df.selectExpr("CAST(body AS STRING) as raw_data", "enqueuedTime as event_time") \
+                 .withColumn("processed_time", current_timestamp())
+
+# Write the processed data to a Delta table in a Lakehouse (e.g., 'Tables/bronze' path)
+query = (
+    processed_df.writeStream
+    .format("delta")
+    .outputMode("append")
+    .option("checkpointLocation", "Tables/bronze/_checkpoints/") # Required for structured streaming
+    .start("Tables/bronze/")
+)
+
+# Keep the stream running (in a long-running notebook session)
+# query.awaitTermination() 
+
+
+// SQL
+Standard T-SQL is primarily used for the Fabric Data Warehouse. While you can query data landed in a Lakehouse via its SQL endpoint, real-time streaming operations are generally handled by KQL or PySpark. 
+
+A simple T-SQL query on data already stored in a warehouse table:
+
+SELECT
+    Street,
+    SUM(No_Bikes) AS TotalBikes
+FROM
+    bikes_by_street -- Replace with your table name
+WHERE
+    Window_End_Time >= DATEADD(hour, -1, GETDATE())
+GROUP BY
+    Street, Window_End_Time;
+
+
+
