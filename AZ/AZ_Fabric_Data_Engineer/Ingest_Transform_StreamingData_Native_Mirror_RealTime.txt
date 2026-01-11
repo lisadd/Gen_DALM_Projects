@@ -1,0 +1,85 @@
+In Microsoft Fabric, real-time streaming data ingestion and transformation are primarily managed through Eventstreams and KQL Databases in the Real-Time Intelligence experience, using Kusto Query Language (KQL) or Python within notebooks. Data storage choices in OneLake depend on whether data movement is required. 
+
+// Ingest and Transform Streaming Data 
+
+The typical workflow involves creating an Eventstream to capture data from sources like Azure Event Hubs or custom apps and routing it to a KQL database for storage and analysis. Transformations can be applied within the eventstream using a no-code editor or through KQL update policies in the KQL database. 
+
+
+// Steps for Ingestion and Transformation (using KQL)
+
+1. Create an Eventhouse and KQL Database: In your Fabric workspace, change your experience to Real-Time Intelligence and create an Eventhouse and a KQL Database.
+
+2. Create an Eventstream: Create an Eventstream item in your workspace.
+
+3. Add a Source: In the Eventstream canvas, add a source (e.g., Azure Event Hub, custom app, Kafka) and configure its connection details.
+
+4. Add a Destination: Add the KQL database you created as a destination for the Eventstream. This is often a no-code process using the UI wizard.
+
+5. Apply Transformation Logic:
+
+1. Within Eventstream: Use the eventstream editor (no-code) to apply basic transformations like filtering or aggregating data before it reaches the destination.
+
+2. In KQL Database: Use KQL update policies to apply more advanced transformations after data has been ingested into a raw (bronze) table. 
+
+// Example KQL Code (using Update Policies)
+First, ingest raw data into a RawDataTable. Then, create a function with the transformation logic and apply an update policy to a target table (TargetDataTable). 
+
+// Create the target table:
+
+.create table TargetDataTable (Timestamp:datetime, Value:real, Station:string)
+
+
+// Create a KQL function for the transformation:
+
+.create function with (docstring = 'A function that transforms raw data', folder='Transformations')
+TransformRawData() {
+    RawDataTable
+    | where Value > 0
+    | project Timestamp, Value = Value * 1.1, Station
+}
+
+
+// Apply an update policy:
+
+.alter table TargetDataTable policy update 
+@'[{"Source": "RawDataTable", "Function": "TransformRawData", "IsEnabled": true}]'
+
+
+Data flowing into RawDataTable will be automatically processed and appended to TargetDataTable. 
+
+
+// Example Python Code (within a Fabric Notebook)
+
+You can use a Python notebook to read data from a KQL database or a Lakehouse, perform complex transformations using Spark, and write it back. 
+
+
+# Assuming you have a KQL database connection configured in the notebook
+# and the data is already in 'RawDataTable'.
+
+# Read data from KQL database into a Spark DataFrame
+df = spark.read.kusto("KQLDatabaseName.RawDataTable").option("kustoAzlib", "true").load()
+
+# Perform transformations using PySpark
+transformed_df = df.filter(df['Value'] > 0).withColumn('Value', df['Value'] * 1.1)
+
+# Write the transformed data to another table or Lakehouse
+# Example: write to a Lakehouse table
+transformed_df.write.mode("overwrite").saveAsTable("lakehouse_name.transformed_data_table")
+
+
+
+Choosing Between Native Storage, Mirrored Storage, or Shortcuts:
+
+Native Storage (Ingested) - Data physically stored in Fabric OneLake. Used when high performance, full control, and deep integration with all Fabric workloads are needed. This is the default for KQL databases and Lakehouses.
+
+Mirrored Storage (Replicated) - Data from external databases (e.g., Azure SQL DB, Snowflake) is continuously replicated into OneLake in open-source Delta format. Offers predictable performance for analytics and historical analysis independent of the source system.
+
+Shortcuts (Virtual Link) - Creates a virtual link to data that stays in its original location (e.g., ADLS Gen2, AWS S3). Used for cost-effective, real-time access to external data with minimal setup and no data duplication. Performance depends on the external system.
+
+
+// Decision Guide:
+
+Choose Native Storage or Mirrored Storage when you require high performance, robust analytics, and want the data fully managed within the Fabric ecosystem.
+
+Choose Shortcuts when you want to avoid data movement, minimize costs, and analyze data that resides in an external storag
+e system (like ADLS Gen2). 
