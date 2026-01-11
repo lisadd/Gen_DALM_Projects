@@ -1,0 +1,58 @@
+In Microsoft Fabric (formerly Azure Data Fabric), you can ingest and transform streaming data using the Eventstream service with KQL or process it with Spark Structured Streaming in a Notebook or Spark Job Definition. 
+
+//Ingest and Transform Streaming Data (KQL/SQL)
+
+The primary method for a no-code/low-code experience in real-time analytics is using Fabric Eventstream and KQL databases. 
+Steps:
+
+1. Create an Eventstream: In your Fabric workspace, create a new Eventstream artifact.
+2. Add a Source: Connect an event source like Azure Event Hubs, Azure IoT Hub, Kafka, or a custom app using a connector.
+3. Define Transformations: Within the Eventstream editor, you can apply basic transformations (filter, enrich, aggregate) using the visual canvas or the SQL operator.
+4. Add a Destination: Route the processed data to a destination like a KQL database, Lakehouse, or Data Warehouse. 
+
+
+// Example Code (KQL/SQL):
+While most transformations in Eventstream are visual, you can query the data in a KQL database using KQL or T-SQL from the SQL analytics endpoint. 
+
+KQL Query in a KQL Queryset:
+
+-- Query data in a KQL database table named 'Sales'
+Sales
+| where OrderDate >= ago(1d)
+| summarize count() by bin(OrderDate, 1h)
+| render timechart
+
+
+
+// T-SQL Query in the SQL analytics endpoint:
+
+-- Query data in a KQL database table (exposed as a view in the SQL endpoint)
+SELECT 
+    COUNT(*) AS num_sales,
+    DATE_TRUNC('hour', OrderDate) AS hour_of_day
+FROM 
+    Sales
+WHERE 
+    OrderDate >= DATEADD(day, -1, GETDATE())
+GROUP BY 
+    DATE_TRUNC('hour', OrderDate)
+ORDER BY 
+    hour_of_day;
+
+
+Process Data with Spark Structured Streaming (Python) 
+For more complex transformations and end-to-end control, you use a Fabric Notebook or Spark Job Definition with Spark Structured Streaming. 
+
+Steps:
+
+1. Create a Lakehouse: The Lakehouse will serve as the storage for your streaming data (using the Delta format).
+2. Create a Notebook/Spark Job Definition: In your workspace, create a new Notebook or Spark Job Definition artifact.
+3. Write Python Code: Use PySpark Structured Streaming to read from a source (e.g., Event Hubs, or a generated stream for testing), apply transformations, and write to the Lakehouse in Delta format with checkpointing.
+4. Run the Job: Execute the Notebook or run the Spark Job Definition as a continuous or triggered process. 
+
+
+See Reference: https://learn.microsoft.com/en-us/fabric/data-engineering/get-started-streaming
+
+
+
+
