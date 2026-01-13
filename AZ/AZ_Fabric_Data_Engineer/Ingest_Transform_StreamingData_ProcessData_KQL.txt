@@ -1,0 +1,106 @@
+Ingesting and transforming streaming data in Azure Data Fabric is primarily handled through the Eventstream and Real-Time Intelligence KQL Database features, using a combination of a low-code/no-code interface and Kusto Query Language (KQL). You can also interact with these services using Python. 
+
+// Ingest and Transform Streaming Data
+
+The most common approach for real-time data is using the graphical Eventstream builder in the Fabric portal. 
+
+// Steps via Eventstream Builder
+
+1. Create an Eventstream: In your Fabric workspace, select the Real-Time hub and choose Get Events. This creates a new eventstream item.
+
+2. Add a Source: Select Add source and choose a connector (e.g., Azure Event Hubs, Azure IoT Hub, Kafka, or a custom app via a custom endpoint). Configure the connection details.
+
+3. Define Transformations (Optional): After configuring the source, you can define data processing operations (transformations) directly within the eventstream using a built-in editor to filter or shape the data before it reaches its destination.
+
+4. Add a Destination: Select Add destination and choose KQL Database to route the data for storage and analysis.
+
+5. Configure Destination and Ingestion: Select your target KQL database and table. The data is automatically ingested into the KQL table in real-time. 
+
+// Example Python Code for Ingestion
+For scenarios where you need a custom application to produce events to your Fabric Eventstream (which acts as an Event Hub), you can use the Python azure-eventhub library. 
+
+
+import asyncio
+from azure.eventhub.aio import EventHubProducerClient
+import json
+import random
+import datetime
+
+# Connection string and Eventstream name from your Fabric Eventstream custom endpoint settings
+EVENTSTREAM_CONNECTION_STR = "Endpoint=sb://<your-namespace>.servicebus.windows.net/..." # Replace with your connection string
+EVENTSTREAM_NAME = "<your-eventstream-name>" # Replace with your eventstream name
+
+def get_row_data(id):
+    """Generate sample event data."""
+    time = datetime.datetime.now(datetime.timezone.utc).isoformat()
+    temperature = round(random.uniform(20, 37), 2)
+    humidity = round(random.uniform(35, 65), 2)
+    return {"entryTime": time, "messageId": id, "temperature": temperature, "humidity": humidity, "deviceID": f"device-{id}"}
+
+async def run():
+    producer = EventHubProducerClient.from_connection_string(
+        conn_str=EVENTSTREAM_CONNECTION_STR, 
+        eventhub_name=EVENTSTREAM_NAME
+    )
+    async with producer:
+        while True:
+            event_data_batch = await producer.create_batch()
+            for k in range(10): # Send 10 events in a batch
+                event_data_batch.try_add(event_data={"body": get_row_data(k)})
+            await producer.send_batch(event_data_batch)
+            print(f"Sent a batch of 10 events at {datetime.datetime.now()}")
+            await asyncio.sleep(5) # Wait for 5 seconds before sending the next batch
+
+if __name__ == "__main__":
+    # Ensure you have 'pip install azure-eventhub'
+    asyncio.run(run())
+
+
+// Process Data by Using KQL or SQL 
+Once data is in the KQL database, you can query it using KQL directly in the KQL Queryset editor in Fabric. You can also use SQL for basic SELECT queries. 
+
+// KQL Query Examples
+You can execute KQL queries within the KQL Queryset or a Fabric Notebook. The pipe (|) character is used to separate sequential operators. 
+
+
+#Retrieve the top 100 rows:
+ 
+YourTableName 
+| take 100
+
+
+# Filter and summarize data:
+
+YourTableName
+| where temperature > 30.0
+| summarize avg(temperature), count() by deviceID, bin(entryTime, 15m)
+| order by avg_temperature desc
+
+
+This query filters records where the temperature exceeds 30 degrees, calculates the average temperature and count per device in 15-minute intervals, and sorts the results. 
+ 
+// SQL Query Example
+
+You can run T-SQL SELECT statements in the KQL Queryset by changing the query language setting or using the "Query table" option which provides sample SQL queries. 
+
+SELECT TOP 100 *
+FROM YourTableName;
+
+
+
+// Python with KQL Queries
+You can run KQL queries programmatically from a Fabric Notebook using the kusto snippet or the azure-kusto-data library. 
+
+# In a Fabric Notebook code cell, type 'kusto' to use the snippet or use the following
+# Example of query for reading data from Kusto
+kustoQuery = "['YourTableName'] | where humidity < 50 | take 50"
+# The query URI for reading the data e.g. https://<cluster>.kusto.data.microsoft.com
+kustoUri = "https://<yourKQLdatabaseURI>.z0.kusto.data.microsoft.com" 
+# The database with data to be read
+database = "YourDatabaseName" 
+
+# The notebook automatically handles authentication when you run the cell
+df = spark.read.format("kusto").option("kustoQuery", kustoQuery).option("kustoUri", kustoUri).option("database", database).load()
+display(df)
+
+

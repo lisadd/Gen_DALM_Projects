@@ -1,0 +1,94 @@
+In Microsoft Fabric, streaming data is typically handled using Eventstreams and stored in a KQL database. Transformations, including windowing functions, can be applied using a low-code visual editor, SQL, or Python in a Fabric Notebook. 
+
+// Ingest and Transform Streaming Data 
+The primary method for ingesting and transforming streaming data is via a Fabric Eventstream item. 
+
+Steps for Ingestion and Transformation
+
+1. Create an Eventstream and KQL Database: In your Fabric workspace, create a new Eventstream item and an Eventhouse (which automatically includes a KQL database).
+
+2. Add a Source: In the eventstream editor, select New source and choose your data source (e.g., Azure Event Hubs, Azure IoT Hub, or sample data). Configure the connection details.
+
+3. Add Transformations: After the source is configured, hover over the connection line or the source node and select the + button. Choose to add transformations such as Aggregate, Filter, or Manage fields using the no-code editor, or select the SQL Code option for SQL expressions.
+
+4. Add a Destination: Connect the output of the transformation (or the raw stream) to a destination, such as a KQL database or a Lakehouse.
+
+5. Publish: Select Publish to start the stream and data flow. 
+
+
+// Creating Windowing Functions
+Windowing functions are a type of aggregation used to perform calculations over a defined time period (window) of streaming data. 
+
+// KQL Example (Real-Time Analytics KQL Queryset)
+Once data is in the KQL database, you can use KQL's powerful window functions in a KQL queryset for analysis. 
+
+// Example: Calculate the total number of bicycles in each street every 5 seconds using a tumbling window.
+// This is done after the data is ingested into the 'bikes' table.
+bikes
+| summarize SUM_no_Bikes = sum(No_Bikes) by Street, bin(Window_End_Time, 5s)
+| project Street, SUM_no_Bikes, Window_End_Time
+| order by Window_End_Time desc
+
+
+
+The bin() function is used here to group data into fixed-size, non-overlapping time windows (tumbling windows). 
+
+// SQL Example (Eventstream SQL Operator)
+You can define processing logic, including windowing, directly within the eventstream using the SQL operator. 
+
+-- Example using T-SQL-like syntax for a tumbling window aggregation within the Eventstream processor
+SELECT
+    Street,
+    SUM(No_Bikes) AS TotalBikes,
+    System.Timestamp() AS WindowEndTime
+INTO
+    [YourKQLDatabase].[bikes_by_street]
+FROM
+    [YourEventstreamSource]
+GROUP BY
+    Street,
+    TumblingWindow(second, 5) -- Defines a 5-second tumbling window
+
+
+// Python Example (Fabric Notebook with Kusto SDK)
+For more complex scenarios, you can use a Fabric Notebook with the azure-kusto-data library to query data in the KQL database using Python. You can then apply windowing logic using standard Python/Pandas operations or by embedding KQL/SQL queries. 
+
+
+First, install the required library in your notebook:
+
+# Install the Azure Kusto data library
+%pip install azure-kusto-data
+
+
+Then, use the library to execute a KQL query with windowing:
+
+import pandas as pd
+from azure.kusto.data import KustoClient, KustoConnectionStringBuilder
+from azure.kusto.data.helpers import dataframe_from_result_table
+
+# --- Configuration (get these values from your KQL DB details in Fabric) ---
+cluster_uri = "https://<cluster_id>.<region>.kusto.data.microsoft.com"
+database_name = "<YourKQLDatabaseName>"
+tenant_id = spark.conf.get("trident.tenant.id") # Get Tenant ID from Spark conf
+
+# Create Kusto connection string
+kcsb = KustoConnectionStringBuilder.with_aad_device_authentication(cluster_uri, tenant_id)
+client = KustoClient(kcsb)
+
+# --- KQL Query with windowing function ---
+kql_query = f"""
+bikes
+| summarize SUM_no_Bikes = sum(No_Bikes) by Street, bin(Window_End_Time, 5s)
+| project Street, SUM_no_Bikes, Window_End_Time
+| order by Window_End_Time desc
+"""
+
+# Execute the query and convert result to a Pandas DataFrame
+response = client.execute(database_name, kql_query)
+df = dataframe_from_result_table(response.primary_results[0])
+
+# Display the results
+display(df)
+
+
+
