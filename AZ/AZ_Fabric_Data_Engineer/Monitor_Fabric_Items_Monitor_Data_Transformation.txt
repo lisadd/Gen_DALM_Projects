@@ -1,0 +1,101 @@
+Monitoring Azure Data Fabric items and data transformations primarily uses built-in features like Workspace Monitoring which logs activity into a KQL database, allowing analysis using Kusto Query Language (KQL), SQL, and Python. 
+
+// Monitor Fabric Items and Data Transformation
+
+Steps for Monitoring
+
+1. Enable Workspace Monitoring: This feature must be turned on in your Fabric workspace settings to automatically log activity, including pipeline job events, into an Eventhouse.
+- Navigate to Workspace Settings > Monitoring tab.
+- Turn on Log workspace activity.
+- This creates a read-only KQL database containing tables like ItemJobEventLogs, which capture job status, duration, and other diagnostics.
+
+2. Connect to the Monitoring Database: Access the generated KQL database via a KQL Queryset, a Fabric Notebook, or the SQL query editor.
+3. Query the Logs: Use KQL, SQL, or Python to query the log data for performance analysis, failure identification, and trend tracking. 
+
+// Example Code for Monitoring
+KQL
+
+KQL is optimal for querying logs and telemetry data, and is the native language for the monitoring database. 
+
+- View failed jobs in the last 24 hours:
+
+ItemJobEventLogs
+| where ingestion_time() between (now(-1d) .. now())
+| where JobStatus == "Failed"
+| project JobName, StartTime, EndTime, ErrorMessage
+| sort by StartTime desc
+
+
+- Summarize job execution per hour:
+
+ItemJobEventLogs
+| where ingestion_time() between (now(-7d) .. now())
+| summarize JobCount = count() by bin(StartTime, 1h), JobStatus, ItemType
+| render timechart
+
+
+
+// SQL
+
+For Data Warehouses and other SQL-enabled endpoints in Fabric, you can use T-SQL queries against dynamic management views (DMVs) for monitoring performance and data transformation operations. 
+
+View active queries (example for a Data Warehouse):
+
+SELECT *
+FROM sys.dm_exec_requests
+WHERE status = 'running';
+
+
+
+Monitor data loading activities using DMVs (specific DMVs depend on the exact Fabric item):
+
+-- Check long running queries in a Fabric Warehouse
+SELECT command, status, wait_stats, total_elapsed_time
+FROM sys.dm_exec_requests
+WHERE command IN ('SELECT', 'INSERT', 'UPDATE', 'DELETE') AND total_elapsed_time > 1000;
+
+
+// Python
+You can use the Azure Kusto Python SDK within a Fabric notebook to programmatically connect to and query the KQL monitoring database, enabling advanced analysis and custom reporting. 
+
+1. Install the SDK in your notebook:
+
+%pip install azure-kusto-data
+
+2. Example Python code to query job logs:
+
+from azure.kusto.data import KustoClient, KustoConnectionStringBuilder
+from azure.kusto.data.helpers import dataframe_from_result_table
+import pandas as pd
+
+# Get connection details (replace with your actual details)
+# Tenant ID can be retrieved using mssparkutils.credentials.getToken('kusto')
+AAD_TENANT_ID = spark.conf.get("trident.tenant.id") 
+KUSTO_URI = "https://<yourKQLdatabaseURI>.z0.kusto.data.microsoft.com"
+KUSTO_DB_NAME = "MyMonitoringDB"
+
+# Build connection string
+kcsb = KustoConnectionStringBuilder.with_interactive_login(KUSTO_URI, AAD_TENANT_ID)
+client = KustoClient(kcsb)
+
+# The KQL query
+kustoQuery = """
+ItemJobEventLogs
+| where JobStatus == 'Failed'
+| summarize FailedRuns = count() by JobName, ItemType
+| top 10 by FailedRuns desc
+"""
+
+# Execute the query and convert to pandas DataFrame
+response = client.execute(KUSTO_DB_NAME, kustoQuery)
+df = dataframe_from_result_table(response.primary_results[0])
+
+# Display the results
+print(df)
+
+
+NOTE: This code connects to your KQL database and fetches a list of the top 10 failed job types, allowing for further analysis or integration into custom dashboards. 
+
+
+
+

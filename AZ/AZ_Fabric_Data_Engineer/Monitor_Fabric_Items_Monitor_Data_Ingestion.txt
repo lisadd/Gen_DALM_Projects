@@ -1,0 +1,99 @@
+Monitoring in Azure Data Fabric involves using built-in tools like the Monitoring Hub and Capacity Metrics App, as well as programmatic methods with KQL and Python using SDKs. SQL can be used to query data once ingested, but KQL is the primary language for monitoring logs within Fabric's Real-Time Intelligence capabilities. 
+
+// Monitor Fabric Items and Data Ingestion 
+
+1. Using KQL for Monitoring (Recommended for Logs) 
+Kusto Query Language (KQL) is best for analyzing operational logs and ingestion results within the Fabric environment. The EventhouseIngestionResultsLogs table stores details of both successful and failed ingestion operations. 
+
+Steps:
+
+1. Navigate to your Microsoft Fabric workspace and select your KQL database or Eventhouse.
+2. Open a new KQL Queryset.
+3. Run queries against the EventhouseIngestionResultsLogs table to monitor ingestion status. 
+
+// Example KQL Code:
+
+The following query checks for failed ingestions in the last hour and summarizes the error details:
+
+EventhouseIngestionResultsLogs
+| where Timestamp > ago(1h)
+| where Status == "Failed"
+| project Timestamp, Status, Details, FailureReason, RootActivityId
+| summarize count() by FailureReason
+
+
+To monitor successful ingestions over time, use this query:
+
+EventhouseIngestionResultsLogs
+| where Timestamp > ago(7d)
+| where Status == "Succeeded"
+| summarize SuccessCount = count() by bin(Timestamp, 1d)
+| render timechart
+
+
+
+You can also connect to Azure Monitor Log Analytics data directly from a KQL Queryset to analyze metrics across various Azure resources. 
+
+2. Using Python for Programmatic Monitoring
+
+You can use the Azure Kusto Python SDK to query KQL databases or the Azure Data Factory SDK to monitor pipeline runs programmatically. 
+
+// Steps:
+
+1. Install the required Python packages in your Fabric Notebook:
+
+%pip install azure-kusto-data azure-kusto-ingest
+
+
+2. Import necessary libraries and connect to your KQL database using its URI and Tenant ID.
+
+3. Execute KQL queries using the SDK and analyze the results. 
+
+// Example Python Code (Querying KQL DB):
+
+from azure.kusto.data import KustoClient, KustoConnectionStringBuilder
+from azure.kusto.data.helpers import dataframe_from_result_table
+from azure.identity import InteractiveBrowserCredential # or AzureCliCredential
+
+# Get these from your KQL database details in the Fabric portal
+cluster_uri = "https://<yourKQLdatabaseURI>.z0.kusto.data.microsoft.com"
+database_name = "<your_database_name>"
+tenant_id = "<your_tenant_id>" # Use spark.conf.get("trident.tenant.id") in a Fabric notebook
+
+# Authenticate
+kcsb = KustoConnectionStringBuilder.with_interactive_browser_auth(cluster_uri)
+client = KustoClient(kcsb)
+
+# Define and execute the KQL query
+query = "EventhouseIngestionResultsLogs | where Status == 'Failed' | count"
+response = client.execute(database_name, query)
+# Convert the result to a pandas DataFrame for analysis
+# df = dataframe_from_result_table(response.primary_results[0])
+print(f"Number of failed ingestions: {response.primary_results[0].rows[0][0]}")
+
+
+
+// 3. Using SQL for Monitoring
+SQL queries in Fabric are primarily for data analysis within the Warehouse or Lakehouse SQL endpoint, not for querying system-level monitoring logs (which are in KQL). 
+
+// Steps & Example:
+1. Navigate to your Warehouse item in Fabric.
+2. Use standard T-SQL to query data tables and verify the row counts to confirm data volume has increased post-ingestion. 
+
+
+// Example SQL Code:
+
+-- Check the number of rows in an ingested data table
+SELECT COUNT(*) AS TotalRowsInTable FROM dbo.YourIngestedDataTable;
+
+-- Check the last update time of a table (metadata check might require admin APIs or capacity metrics app)
+-- Direct SQL queries on system logs are generally not available; rely on the KQL approach above.
+
+
+
+// Visual Monitoring Tools
+For a general overview, administrators should use the following built-in Power BI apps:
+
+- Microsoft Fabric Capacity Metrics app: Provides visibility into capacity usage, performance, and consumption across all Fabric workloads, including SQL database usage.
+
+- Monitoring Hub: A central place in the Fabric UI to track ongoing and historical activities of various items like pipelines and notebooks. 
