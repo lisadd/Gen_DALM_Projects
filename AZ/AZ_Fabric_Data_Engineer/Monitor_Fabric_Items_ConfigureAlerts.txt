@@ -1,0 +1,95 @@
+Monitoring Microsoft Fabric items and configuring alerts is primarily accomplished using the Microsoft Fabric Real-Time Intelligence features, specifically the Real-Time hub, KQL Querysets, and Data Activator. 
+
+// Monitoring Fabric Items
+You can monitor job results and events for various Fabric items using event logs which can be ingested into a KQL database for analysis. 
+
+// Using KQL
+
+You can write Kusto Query Language (KQL) queries in a KQL Queryset to analyze monitoring data. 
+
+- To query item job event logs:
+
+# Assuming your monitoring data is ingested into a table named 'ItemJobEventLogs'
+ItemJobEventLogs
+| where EventStatus == "Failed"
+| summarize FailureCount = count() by ItemName, EventStatus, bin(Timestamp, 1h)
+| where FailureCount > 0
+| order by Timestamp desc
+
+
+
+This KQL query filters for failed events, counts the failures per item name hourly, and orders the results by time.
+
+- To query performance using Dynamic Management Views (DMVs) for SQL databases/warehouses:
+
+SELECT *
+FROM sys.dm_exec_connections;
+
+
+
+This T-SQL query can be run in the SQL query editor to monitor connections. 
+
+// Using Python
+
+While direct alert configuration is done via the UI or APIs, you can use Python in a Fabric notebook to access and analyze monitoring data, leveraging libraries like azure-mgmt-monitor for more advanced Azure Monitor integrations if needed. 
+
+- Example of using Python with Azure Monitor client (requires appropriate setup and permissions):
+
+
+# This example requires the azure-identity and azure-mgmt-monitor libraries
+# and is typically run in an environment with access to Azure APIs,
+# often outside of a standard Fabric notebook cell for alert creation.
+
+# Example KQL query to be used by Azure Monitor API
+kql_query = """
+ConfigurationData
+| where SvcState != "Running"
+"""
+
+# Python code for creating an alert rule via Azure Monitor Management Client
+# (The actual implementation details will vary based on your specific environment and goal)
+# The following snippet demonstrates the concept:
+# from azure.identity import DefaultAzureCredential
+# from azure.mgmt.monitor import MonitorManagementClient
+# ...
+# credential = DefaultAzureCredential()
+# monitor_client = MonitorManagementClient(credential, subscription_id)
+# ...
+# rule_result = monitor_client.scheduled_query_rules.create_or_update(...)
+
+
+
+
+For monitoring and analysis within Fabric, you would typically read data from a KQL database into a Pandas DataFrame in a Python Notebook using the built-in Kusto snippets. 
+
+// Configure Alerts
+
+Alerts in Microsoft Fabric are primarily configured using the Data Activator feature, which can trigger notifications (email, Teams) or actions (run a pipeline, notebook) based on conditions. 
+
+// Steps to Configure an Alert using KQL Queryset
+
+1. Create a KQL Queryset: In your Fabric workspace, navigate to the Real-Time Intelligence experience and open a KQL Queryset.
+2. Write your query: Write a KQL query that returns results when a condition for your alert is met. The query defines the data you are monitoring.
+
+
+# Example: Alert if there are unresolved high-priority tickets
+TransformedData
+| where Status == "Unresolved"
+| summarize UnresolvedCount = count() by IssuePriority
+| where IssuePriority == "High" and UnresolvedCount > 10
+
+
+
+3. Set the Alert: Above the query results, select the Set alert button.
+4. Configure in Data Activator: This opens the Data Activator pane where you can define the alert logic and action.
+  1. Specify the trigger condition (e.g., "when 'UnresolvedCount' is greater than 10").
+  2. Choose an action, such as sending an email or Teams message, or triggering another Fabric item like a pipeline.
+  3. Save the alert. 
+
+
+
+// Using SQL
+You can also use T-SQL in the SQL query editor to query monitoring DMVs, but alert configuration for general Fabric items is not directly done via T-SQL code. The results from T-SQL queries would need to be integrated into the Data Activator framework or Azure Monitor via other mechanisms. 
+
+// Using Python
+Alert configuration in Python involves using the Azure management SDKs to create ScheduledQueryRules in Azure Monitor, as the functionality is built on the Azure platform. This is more complex than using the built-in Fabric UI and Data Activator. 
