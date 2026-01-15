@@ -1,0 +1,46 @@
+Monitoring Microsoft Fabric items and semantic model refreshes can be accomplished using Python (via the SemPy library or REST APIs) or KQL/SQL (by leveraging the workspace monitoring logs stored in a KQL database or by querying the Warehouse/Lakehouse SQL endpoint DMVs). 
+
+// Monitor Fabric Items using KQL/SQL 
+You can enable workspace monitoring to store item job event logs in a dedicated Eventhouse KQL database, which you can then query using KQL or SQL. 
+
+// Steps
+
+1. Enable Workspace Monitoring: In your Fabric workspace, go to Workspace Settings, select the Monitoring tab, and turn on Log workspace activity. This automatically creates an Eventhouse and a read-only KQL database for logs.
+2. Access the Logs: Navigate to the created KQL database. The logs are stored in tables like item job event logs.
+3. Query the Logs: Use a KQL Queryset or connect via the SQL analytics endpoint to run queries. 
+
+// KQL Example
+This query retrieves recent job events, analyzes performance trends, and identifies failed jobs: 
+
+// Base query to analyze semantic model refresh details and performance
+// Requires 'Log workspace activity' to be enabled in Workspace settings
+SemanticModelLogs
+| where OperationName contains "Refresh"
+| extend parsed_event = parse_json(EventText)
+| project Timestamp, OperationName, Status = parsed_event.Status, Duration = parsed_event.Duration, ItemName = ApplicationContext.ItemName
+| summarize count() by Status, bin(Timestamp, 1h)
+| render columnchart
+
+
+
+// SQL Example
+For monitoring queries within a Fabric Data Warehouse, you can use built-in system views via the SQL analytics endpoint. 
+
+-- Query the sys.dm_exec_sessions DMV to monitor current query activity
+SELECT *
+FROM sys.dm_exec_sessions
+WHERE [status] <> 'idle';
+
+-- You can also use Query activity to view historical T-SQL queries
+
+
+// Monitor Semantic Model Refresh using Python 
+You can use the sempy.fabric library within a Fabric notebook to programmatically list and monitor semantic model refresh requests. 
+
+Steps
+1. Open a Notebook: In your Microsoft Fabric workspace, create a new notebook or open an existing one.
+2. Import Library: Import the necessary sempy.fabric library.
+3. Monitor Refreshes: Use the list_refresh_requests function to get details on past and running refreshes. 
+
+Python Example - See Reference: https://www.kevinrchant.com/2025/01/28/four-ways-to-monitor-a-semantic-model-refresh-in-microsoft-fabric/
+This code lists refresh requests for a specified dataset and calculates their duration in seconds: 
