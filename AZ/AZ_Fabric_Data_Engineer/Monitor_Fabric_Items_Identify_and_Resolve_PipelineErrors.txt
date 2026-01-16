@@ -1,0 +1,198 @@
+Monitoring Microsoft Fabric items and resolving pipeline errors can be done using the built-in Workspace Monitoring feature, which logs events to a KQL (Kusto Query Language) database, and through programmatic access via Python SDKs or SQL queries. 
+
+Monitor Fabric Items (Pipelines)
+
+The recommended approach is to enable Workspace Monitoring in your Fabric workspace settings to store log-level visibility for all items. 
+
+// Steps to Enable Workspace Monitoring
+
+1. Navigate to Workspace Settings in your Fabric Workspace.
+2. Select the Monitoring tab.
+3. Add a Monitoring Eventhouse (this creates a KQL database specifically for logs).
+4. Turn on Log workspace activity. 
+Logs are stored in tables within the KQL database, such as ItemJobEventLogs and PipelineRun, capturing status, timestamps, and diagnostics. 
+
+// Example Code (KQL)
+You can use KQL queries in the KQL Queryset to analyze monitoring data, such as success/failure trends and performance metrics. 
+To check the status of recent pipeline runs:
+
+PipelineRun
+| where TimeGenerated > ago(1h)
+| summarize count() by Status, PipelineName
+| order by count_ desc
+
+
+
+To view detailed error messages for failed runs:
+
+
+ItemJobEventLogs
+| where ItemType == "Pipeline"
+| where Status == "Failed"
+| project TimeGenerated, ItemName, ErrorMessage = coalesce(tostring(Properties.errors), "N/A")
+| order by TimeGenerated desc
+
+
+
+// Example Code (Python)
+You can query the monitoring KQL database from a Fabric notebook using the azure-kusto-data SDK and kqlmagic library. 
+
+1. Install necessary libraries in your notebook:
+
+!pip install azure-kusto-data kqlmagic
+
+
+2. Use magic commands to connect and run KQL queries:
+
+# Example of query for reading data from Kusto
+%kql <yourKQLdatabaseURI>;database=<yourKQLdatabaseName>
+let failedRuns = PipelineRun
+    | where TimeGenerated > ago(1d)
+    | where Status == "Failed"
+    | project PipelineName, RunId, StartTime = TimeGenerated, Error = ErrorMessage;
+failedRuns | take 10
+
+
+
+The results are returned as a pandas DataFrame for further analysis within Python. 
+
+// Example Code (SQL)
+
+You can also use T-SQL in a Fabric Notebook or SQL analytics endpoint to query a KQL database, though KQL is the native language. 
+
+-- This requires connecting to the KQL database's SQL analytics endpoint
+SELECT
+    PipelineName,
+    RunId,
+    Status,
+    TimeGenerated
+FROM
+    dbo.PipelineRun -- Table name might vary based on setup
+WHERE
+    Status = 'Failed'
+    AND TimeGenerated > DATEADD(hour, -1, GETDATE())
+
+
+// Identify and Resolve Pipeline Errors
+Identifying errors is done through the monitoring methods above. Resolution often involves visual inspection in the Monitoring Hub or leveraging AI-powered tools. 
+
+
+- Visual Monitoring: In the Fabric UI, navigate to the Monitor hub on the left sidebar to visually inspect pipeline runs, click on failed runs, and view the "Error Insights" or "View Detail" pane for specific error messages and suggested fixes.
+
+- Programmatic Error Handling: Within a data pipeline design, you can implement explicit error handling using the Fail activity or conditional logic (If Condition, Set Variable) to route failures to a specific error-logging mechanism, such as writing details to a custom SQL error table. 
+
+
+// Example Code for Error Logging (SQL)
+
+You can use a stored procedure and the UponFailure path in a pipeline to log errors to a SQL table. 
+
+1. Create an ErrorLog table in your Azure SQL Database or Fabric Lakehouse/Warehouse:
+
+CREATE TABLE dbo.ErrorLog (
+    ErrorLogID INT IDENTITY(1,1) PRIMARY KEY,
+    PipelineName NVARCHAR(200),
+    RunId UNIQUEIDENTIFIER,
+    ActivityName NVARCHAR(200),
+    ErrorMessage NVARCHAR(MAX),
+    ErrorTime DATETIME2
+);
+
+
+Within the pipeline, link the failed activity to an activity (e.g., Stored Procedure activity) that calls an error logging procedure, passing the system variables for the error details. 
+
+
+
+""" OR Monitor with PYTHON SDK: """
+
+
+Monitoring Azure Data Factory (ADF) or Microsoft Fabric pipelines in 2026 involves using modern SDKs and unified logging. Below are the steps and example code for monitoring and error resolution using Python and KQL. 
+
+1. Monitoring with Python (SDK)
+
+You can use the azure-mgmt-datafactory library to programmatically check the status of your pipelines and identify specific errors.
+
+
+// Steps:
+1. Install Packages: Use pip install azure-mgmt-datafactory azure-identity.
+2. Authenticate: Use DefaultAzureCredential to authenticate with your Azure environment.
+3. Fetch Pipeline Status: Query the run ID to get the current state (Succeeded, Failed, etc.).
+4. Extract Errors: If failed, query activity_runs to see which specific activity failed and why. 
+
+
+// Example Code:
+
+from azure.identity import DefaultAzureCredential
+from azure.mgmt.datafactory import DataFactoryManagementClient
+from datetime import datetime, timedelta
+
+# Initialize client
+client = DataFactoryManagementClient(DefaultAzureCredential(), "<subscription_id>")
+
+# Get pipeline run details
+run = client.pipeline_runs.get("<resource_group>", "<factory_name>", "<run_id>")
+print(f"Pipeline Status: {run.status}")
+
+# Identify specific activity failures if pipeline failed
+if run.status == "Failed":
+    filter_params = {"last_updated_after": datetime.now() - timedelta(1), 
+                     "last_updated_before": datetime.now() + timedelta(1)}
+    activities = client.activity_runs.query_by_pipeline_run(
+        "<resource_group>", "<factory_name>", "<run_id>", filter_params)
+    
+    for activity in activities.value:
+        if activity.status == "Failed":
+            print(f"Failed Activity: {activity.activity_name}")
+            print(f"Error Message: {activity.error['message']}") # Resolve by checking this log
+Use code with caution.
+
+2. Monitoring with KQL (Log Analytics) 
+KQL is the primary tool for querying large-scale logs in Azure Monitor or Microsoft Fabric's Workspace Monitoring. 
+
+Steps:
+
+1. Enable Logging: In the Azure Portal or Fabric Workspace, navigate to Diagnostic Settings and send logs to a Log Analytics workspace or Eventhouse.
+
+2. Run Queries: Use the Logs tab to run Kusto queries. 
+
+// Example Queries:
+
+- Identify Failed Pipelines (Last 24 Hours):
+kql
+
+ADFPipelineRun
+| where Status == "Failed"
+| where TimeGenerated > ago(24h)
+| project TimeGenerated, PipelineName, RunId, ErrorMessage = FailureType
+Use code with caution.
+
+- Identify Top 5 Activity Failures:
+kql
+
+ADFActivityRun
+| where Status == "Failed"
+| summarize count() by ActivityName, FailureType
+| top 5 by count_
+Use code with caution.
+
+ 
+3. Resolving Errors (SQL & Logic)
+While SQL is rarely used to query the metadata directly, it is crucial for resolving data-level errors that cause pipeline failures.
+
+- Conflict Resolution: If a "Failed to resolve connection" error occurs, verify your Azure SQL Database connectivity and ensure the Integration Runtime (IR) IP is whitelisted.
+- Data Consistency: Use SQL scripts to check for deadlocks or blocking processes that might time out your pipeline:
+
+sql
+-- Check for active blocks in SQL Server
+SELECT session_id, blocking_session_id, wait_type, wait_time 
+FROM sys.dm_exec_requests 
+WHERE blocking_session_id <> 0;
+
+NOTE: Use code with caution.
+
+Error Handling in Pipeline: Add an "If Condition" or "Upon Failure" path in the ADF UI. You can use a Stored Procedure activity to log the error into a custom SQL table for further analysis. 
+
+
+
+
+
+
