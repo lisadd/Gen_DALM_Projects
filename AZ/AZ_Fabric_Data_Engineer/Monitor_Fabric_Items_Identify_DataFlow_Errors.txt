@@ -1,0 +1,80 @@
+Monitoring Microsoft Fabric items and resolving dataflow errors can be done using the Monitoring hub in the UI, or programmatically using KQL, SQL, and Python against diagnostic logs streamed to a Log Analytics workspace. 
+
+// Monitor Fabric Items
+The primary way to monitor items is through the Monitoring hub in the Fabric portal, or by routing diagnostic logs to an Eventhouse KQL database or Log Analytics workspace for advanced analysis. 
+
+UI Method (Monitoring hub)
+
+1. Access the Monitoring hub: Select Monitoring hub from the left navigation pane in the Fabric portal.
+2. View Activities: The hub displays activities (pipelines, dataflows, etc.) with their status, start time, and duration. You can filter by status, item type, and more.
+3. Identify Errors: Look for items with a "Failed" status. The display provides an overview of the status of your dataflows. 
+
+
+// Programmatic Method (KQL/SQL)
+For programmatic monitoring, first enable workspace monitoring in the Workspace Settings to route logs to a dedicated KQL database. 
+
+1. Enable Logging: In your Fabric Workspace Settings, go to the Monitoring tab and turn on "Log workspace activity". This creates an ItemJobEventLogs table in a read-only KQL database.
+
+2. Query Logs: Use KQL or T-SQL in a KQL Queryset or SQL Query editor to analyze the ItemJobEventLogs table. 
+
+// KQL Example: View failed dataflow runs:
+
+ItemJobEventLogs
+| where ItemType == "Dataflow"
+| where Status == "Failed"
+| where StartTime >= now(-1d)
+| project JobId, ItemName, StartTime, EndTime, ErrorMessage = Properties.ErrorMessage
+| take 100
+
+
+SQL Example: View recent pipeline run statuses (using DMVs for SQL Warehouses)
+
+For monitoring SQL warehouse queries, Dynamic Management Views (DMVs) can be used. For general item monitoring, direct ItemJobEventLogs access is through KQL. A SQL equivalent for general logs is not directly available through T-SQL endpoints as they are for KQL DBs. 
+
+// Identify and Resolve Dataflow Errors
+Once an error is identified (either in the Monitoring hub or via a query), you can drill down into the specifics. 
+
+
+// UI Method (Monitoring hub)
+
+- Drill Down: Select the failed dataflow activity in the Monitoring hub to view detailed execution statistics and error messages.
+- Debug: Use the Dataflow Debug Mode during development to examine the performance and issues within the dataflow itself. 
+
+
+
+// Python Method (Programmatic via REST API/SDK) 
+
+While direct SDK methods for monitoring Fabric dataflows are still evolving, the standard approach for Azure Data Factory (ADF), which underlies Fabric data pipelines and dataflows, is to use the REST API or Python SDK to retrieve activity run details programmatically. 
+
+A common pattern is to use Python in a Fabric notebook with kqlmagic to query the KQL monitoring database, as shown above. G
+
+// Python Example (using kqlmagic in a Fabric notebook):
+
+First, install and load the kqlmagic library within a notebook cell: 
+
+%pip install kqlmagic
+%load_ext kqlmagic
+
+Then, use the magic command to connect to your KQL database and run a query, which returns a pandas DataFrame for further analysis: 
+
+
+# Replace <kql_query_uri> and <database_name> with your details
+kustoUri = "https://<yourKQLdatabaseURI>.z0.kusto.data.microsoft.com"
+database = "<database_name>"
+
+# Connect (authentication is handled by the Fabric notebook environment)
+%kql azuredataexplorer://tenantid=<tenant_id>@<kql_query_uri>/<database_name>
+
+# Query for failed jobs and store the result in a pandas DataFrame
+df = %kql ItemJobEventLogs | where ItemType == "Dataflow" | where Status == "Failed" | take 10
+
+# Analyze the DataFrame in Python
+print(df)
+for index, row in df.iterrows():
+    print(f"Error in Dataflow: {row['ItemName']}, Message: {row['ErrorMessage']}")
+
+
+
+
+
+
