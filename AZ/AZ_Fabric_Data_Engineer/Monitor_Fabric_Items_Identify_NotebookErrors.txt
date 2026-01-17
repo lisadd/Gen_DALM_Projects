@@ -1,0 +1,83 @@
+Troubleshooting notebook errors in Microsoft Fabric involves a systematic approach including checking common issues (permissions, connectivity), utilizing built-in tools like Error Insights and Intellisense, and implementing code-specific debugging techniques for Python, KQL, and SQL. 
+
+// General Troubleshooting Steps
+
+1. Check Error Messages: The primary source of information. The Fabric UI provides detailed error messages, and for pipeline errors, you can use the Error Insights button (AI-powered feature) for explanations and suggested fixes.
+2. Verify Authentication and Permissions: Many errors relate to access.
+  1. Ensure you are signed in with the correct Microsoft Entra account.
+  2. Refresh your session by signing out and signing back in.
+  3. Confirm you have the necessary role (Contributor or Admin) for the workspace, lakehouse, or warehouse you are accessing.
+
+3. Review System Status: Transient errors can occur. Check the Fabric known issues page or wait a few minutes and retry the operation.
+4. Network and Connectivity: Notebooks use WebSockets; ensure your network or proxy configurations are not blocking necessary connections or ports (e.g., port 3342 for SQL Managed Instance). 
+
+// Code-Specific Error Resolution
+
+For Python, the default kernel in Fabric, errors are often related to library management, Spark session issues, or general coding errors.
+// Library Errors:
+
+ - Symptom: Library Management error or LM_LibraryManagementPersonalizationStatement_Error.
+ - Resolution: Recreate a new environment and reattach the necessary libraries. Ensure the libraries are published before running the notebook.
+
+// General Coding Errors: Use standard Python try-except blocks for runtime error handling.
+- Example Code:
+
+try:
+    # Example of a potential error (division by zero)
+    result = 10 / 0 
+except ZeroDivisionError as e:
+    print(f"An error occurred: {e}")
+    # Log the error for further investigation
+    # You can use a logging library here
+except Exception as e:
+    print(f"A general exception occurred: {e}")
+
+
+
+
+// KQL in Python (using Kqlmagic):
+- Symptom: Connection issues or incorrect queries when using %kql magic commands.
+- Resolution: Run %config Kqlmagic.short_errors=False in a cell to get detailed Kusto errors.
+- Ensure the required libraries are installed: !pip install azure-kusto-data kqlmagic. 
+
+
+// KQL (Kusto Query Language)
+KQL queries are typically run in a KQL database queryset or using Kqlmagic in a Python notebook. 
+
+- Syntax and Schema Errors:
+  - Resolution: Utilize the Intellisense feature in the KQL editor, which highlights syntax errors and suggests table/column names.
+  - Ensure all referenced tables and columns exist and you have access.
+
+- Query Timeouts:
+  - Resolution: Adjust the query to filter data using appropriate time ranges or add take operators to limit the result size.
+
+- Example Code (using Kqlmagic in Python notebook):
+
+%config Kqlmagic.short_errors=False # Enable detailed error reporting
+%kql --help "help" # Check connection/syntax for help
+
+%%kql
+# An example of a KQL error (assuming 'NonExistentTable' does not exist)
+NonExistentTable | take 10
+
+
+
+The output would explicitly state that the table is not found. 
+
+// SQL (T-SQL)
+SQL queries in Fabric are typically run against a Warehouse or SQL analytics endpoint. 
+
+- Connection Errors:
+  - Symptom: SqlConnectionIsClosed, Execution Timeout Expired, connect timed out.
+  - Resolution: Implement retry logic in your application. Increase connection or query timeout values. Verify network configuration and firewall settings.
+
+- Permission or Object Not Found Errors:
+  - Symptom: Cannot find the object "dbo. Contoso" or permission denied.
+  - Resolution: Ensure the object exists and the user account has sufficient permissions. Switch to a more privileged SQL account if necessary.
+
+// Example Code (in a T-SQL cell in Fabric notebook):
+
+-- Example of a SQL error (assuming 'FactSalesTable' does not exist)
+SELECT * FROM FactSalesTable WHERE date_id > 20240101;
+
+
