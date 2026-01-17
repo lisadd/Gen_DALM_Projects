@@ -1,0 +1,33 @@
+To identify and resolve Eventhouse errors in Azure Data Fabric, you must leverage the monitoring tools within Fabric, such as Monitoring Hub and Runtime logs, and use KQL, Python, or SQL for programmatic access and advanced diagnostics. 
+
+// Step-by-Step Guide to Error Resolution
+1. Identification and Initial Triage
+   - Check Monitoring Hub: Access the Monitoring tab in your Eventhouse explorer to view query insights and general operational data. This provides an overview of performance and potential bottlenecks.
+   - Review Runtime Logs: For ingestion-specific errors (e.g., from an Eventstream source), check the Runtime logs tab in the Eventstream editor for detailed error messages and stack traces.
+   - Verify Service Health: Check the Azure Service Health Dashboard for any ongoing service outages in your region.
+   - Check Capacity Limits: High capacity unit (CU) usage can lead to query throttling. Use the Fabric Capacity Metrics app to monitor usage and consider increasing capacity if needed. 
+
+
+2. Programmatic Troubleshooting (KQL, Python, SQL)
+Once an error is identified, you can use KQL, Python, or SQL for deeper analysis or to automate resolution. 
+
+- KQL (Kusto Query Language): Query monitoring data, check for specific error events in diagnostic logs (if configured), and verify data in tables for format issues or missing values.
+
+// Example KQL query to find error events in diagnostic logs (if configured)
+AzureDiagnostics
+| where Category == "EventHubVNetConnectionEvent" or Category == "EventStreamIngestion" // Use relevant categories
+| where Action == "Deny Connection" or Status == "Error"
+| project TimeGenerated, IPAddress, Reason, SubscriptionId
+
+
+
+- Python: Utilize Fabric APIs to manage and monitor Eventhouse items and use Python in a Fabric notebook to automate maintenance tasks like table optimization if data format issues occur.
+
+- SQL (T-SQL): Use the T-SQL endpoint to query data, check for issues, and address tempdb space problems by optimizing complex queries and ensuring column statistics are updated.
+
+-- Example T-SQL query to select top 100 rows and check for data issues
+SELECT TOP 100 * FROM YourTableName;
+
+-- Check specific columns
+SELECT TOP 10 Street, No_Bikes FROM Bikestream;
+
